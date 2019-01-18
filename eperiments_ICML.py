@@ -8,6 +8,7 @@ import datetime
 from losses import HingeLoss, AbsoluteLoss, Loss
 import os
 
+EXP_FOLDER = 'exps'
 
 def make_exp_dir(experiment_name):
     now = datetime.datetime.now()
@@ -134,7 +135,7 @@ def exp(exp_name, seed, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1)
     exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_str))
     plot_2fig(losses_ltl_dict, losses_itl, losses_oracle, loss_inner_initial, loss_inner_oracle,
               loss_wbar, '', y_label='test'+metric_name+' (mean and std over test tasks)',
-              title=exp_str,
+              title='',
               save_dir_path=exp_dir_path, show_plot=show_plot)
 
     save_exp_parameters(exp_parameters, exp_dir_path)
@@ -221,7 +222,7 @@ def exp_gid_search(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), a
     exp_parameters = locals()
     print('parameters ' + exp_str, exp_parameters)
 
-    exp_dir_path = make_exp_dir(exp_str)
+    exp_dir_path = make_exp_dir(os.path.join(EXP_FOLDER, exp_str))
 
     # hyperparameters for the grid search
     lambdas = HyperList(lambdas)
@@ -370,18 +371,29 @@ def grid_search_several_trials(exp_str='exp1', n_processes=10):
 
 def grid_search_several_trials2(exp_str='exp1', n_processes=10):
     for n_train in [10, 50, 100]:
-        for tasks_std in [0.2, 2, 4, 20]:
-            for w_bar in [40, 4, 1, 0]:
+        for tasks_std in [0.2, 0.4,  4, 20]:
+            for w_bar in [40, 4, 1]:
+                tasks_std = w_bar*tasks_std/4
                 exp_gid_search(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
-                               n_processes=n_processes, w_bar=w_bar)
+                               n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
+                               use_hyper_bounds=True)
+
+
+def grid_search_variance(exp_str='exp1', n_processes=10):
+    for n_train in [10, 50, 100]:
+        for tasks_std in [1, 2,  4, 8]:
+            w_bar = 4
+            exp_gid_search(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
+                           n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
+                           use_hyper_bounds=True)
 
 
 if __name__ == '__main__':
-    exp_gid_search('exp1', lambdas=[0.01, 0.1], alphas=[10, 100, 1000], y_snr=10, task_std=3, n_train=100, n_tasks=100,
-                    inner_solver_str=['ssubgd'], w_bar=10, verbose=2, use_hyper_bounds=False)
-    #grid_search_several_trials(exp_str='exp1', n_processes=30)
+    #exp_gid_search('exp1', lambdas=[0.01, 0.1], alphas=[10, 100, 1000], y_snr=10, task_std=3, n_train=100, n_tasks=100,
+    #                inner_solver_str=['ssubgd'], w_bar=10, verbose=2, use_hyper_bounds=False)
+    grid_search_variance(exp_str='exp1', n_processes=20)
     #grid_search_several_trials(exp_str='exp2', n_processes=30)
-    #exp1(seed=0, y_snr=100, task_std=2, n_tasks=10, n_train=100, n_dims=30, alpha=50,
+    #exp2(seed=0, y_snr=100, task_std=2, n_tasks=100, n_train=100, n_dims=30, alpha=100,
     #     lmbd=0.1, gamma=None, n_tasks_test=200, n_test=100, val_perc=0.0, inner_solver_str=['ssubgd'],
     #     use_hyper_bounds=False,
     #     inner_solver_test_str='ssubgd', show_plot=True)

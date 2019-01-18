@@ -91,7 +91,7 @@ def regression_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20,
 
 
 def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20, n_test=100, y_snr=5, task_std=1,
-                                   y_dist='sign', w_bar=4):
+                                   y_dist='nonoise', w_bar=4):
     w_bar = w_bar * np.ones(n_dims) if type(w_bar) == int else w_bar
     W_true = np.zeros((n_dims, n_tasks))
     X_train, Y_train = [None] * n_tasks, [None] * n_tasks
@@ -120,6 +120,9 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
             y_n[y_n_uniform > p_y_given_x] = 1
         elif y_dist == 'sign':
             y_n = np.sign(clean_y_n + eps_n)
+        elif y_dist == 'nonoise':
+            y_n = np.sign(clean_y_n)
+
 
         X_train_all, X_test[i], Y_train_all, Y_test[i] = train_test_split(X_n, y_n, test_size=n_test)
         X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
