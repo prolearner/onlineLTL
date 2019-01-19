@@ -32,7 +32,7 @@ def save_exp_parameters(exp_parameters, exp_dir_path):
 
 def exp1(seed=0, w_bar=4, y_snr=100, task_std=1, n_tasks=100, n_train=100, n_dims=30, alpha=10, lmbd=0.01, gamma=None,
          n_tasks_test=200, n_test=100, val_perc=0.0, exp_dir='', inner_solver_str=('ssubgd', 'subgd'),
-         inner_solver_test_str='ssubgd', use_hyper_bounds=False, show_plot=False, verbose=1):
+         inner_solver_test_str='ssubgd', use_hyper_bounds=False, show_plot=False, verbose=1, save_res=True):
     # regression experiment with the absolute loss |y - yhat|
 
     tasks_gen = gen.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc,
@@ -44,12 +44,12 @@ def exp1(seed=0, w_bar=4, y_snr=100, task_std=1, n_tasks=100, n_train=100, n_dim
                n_tasks=n_tasks, n_train=n_train, n_dims=n_dims, inner_solver_str=inner_solver_str,
                inner_solver_test_str= inner_solver_test_str, use_hyper_bounds=use_hyper_bounds,
                n_tasks_test=n_tasks_test, n_test=n_test, val_perc=val_perc,
-               show_plot=show_plot, eval_online=True, verbose=verbose)
+               show_plot=show_plot, eval_online=True, verbose=verbose, save_res=save_res)
 
 
 def exp2(seed=0, w_bar=4, y_snr=100, task_std=2, n_tasks=100, n_train=100, n_dims=30, alpha=10, lmbd=0.01, gamma=None,
          n_tasks_test=200, n_test=100, val_perc=0.0, exp_dir='', inner_solver_str=('ssubgd', 'subgd'),
-         inner_solver_test_str='ssubgd', use_hyper_bounds=False, show_plot=False, verbose=1):
+         inner_solver_test_str='ssubgd', use_hyper_bounds=False, show_plot=False, verbose=1, save_res=True):
     # classification experiment with the hinge loss: max(1 - yhat*y, 0)
 
     tasks_gen = gen.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc,
@@ -60,13 +60,13 @@ def exp2(seed=0, w_bar=4, y_snr=100, task_std=2, n_tasks=100, n_train=100, n_dim
                alpha=alpha, lmbd=lmbd, gamma=gamma, n_tasks=n_tasks, n_train=n_train, n_dims=n_dims, exp_dir=exp_dir,
                use_hyper_bounds=use_hyper_bounds, n_tasks_test=n_tasks_test, n_test=n_test, val_perc=val_perc,
                inner_solver_str=inner_solver_str, inner_solver_test_str=inner_solver_test_str,
-               show_plot=show_plot, eval_online=True, verbose=verbose)
+               show_plot=show_plot, eval_online=True, verbose=verbose, save_res=save_res)
 
 
 def exp(exp_name, seed, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamma=None,
         n_tasks=100, n_train=5, n_dims=30, n_tasks_test=200, n_test=100, val_perc=0.0, show_plot=False,
         inner_solver_str=('ssubgd', 'subgd'), inner_solver_test_str='ssubgd', exp_dir='',
-        use_hyper_bounds=False, verbose=1, eval_online=True):
+        use_hyper_bounds=False, verbose=1, eval_online=True, save_res=False):
 
     if use_hyper_bounds:
         lmbd = lmbd_theory_meta(rx=tasks_gen.rx, L=loss_class.L, sigma_bar=tasks_gen.sigma_h(tasks_gen.w_bar), n=n_train)
@@ -132,20 +132,23 @@ def exp(exp_name, seed, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1)
     print_metric_mean_and_std(losses_ltl_dict, name=metric_name + " LTL")
     print_metric_mean_and_std(losses_oracle, name=metric_name + " Oracle")
 
-    exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_str))
+    if save_res:
+        exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_str))
+        save_exp_parameters(exp_parameters, exp_dir_path)
+        np.savetxt(os.path.join(exp_dir_path, "wbar-oracle.csv"), loss_wbar, delimiter=",")
+        np.savetxt(os.path.join(exp_dir_path, "inner-oracle.csv"), loss_inner_oracle, delimiter=",")
+        np.savetxt(os.path.join(exp_dir_path, "zero-losses.csv"), loss_inner_initial, delimiter=",")
+        save_nparray(losses_ltl_dict, 'ltl', exp_dir_path)
+        save_nparray(hs_dict, 'hs', exp_dir_path)
+        np.savetxt(os.path.join(exp_dir_path, "itl.csv"), losses_itl, delimiter=",")
+        np.savetxt(os.path.join(exp_dir_path, "oracle.csv"), losses_itl, delimiter=",")
+    else:
+        exp_dir_path=None
+
     plot_2fig(losses_ltl_dict, losses_itl, losses_oracle, loss_inner_initial, loss_inner_oracle,
               loss_wbar, '', y_label='test'+metric_name+' (mean and std over test tasks)',
               title='',
               save_dir_path=exp_dir_path, show_plot=show_plot)
-
-    save_exp_parameters(exp_parameters, exp_dir_path)
-    np.savetxt(os.path.join(exp_dir_path, "wbar-oracle.csv"), loss_wbar, delimiter=",")
-    np.savetxt(os.path.join(exp_dir_path, "inner-oracle.csv"), loss_inner_oracle, delimiter=",")
-    np.savetxt(os.path.join(exp_dir_path, "zero-losses.csv"), loss_inner_initial, delimiter=",")
-    save_nparray(losses_ltl_dict, 'ltl', exp_dir_path)
-    save_nparray(hs_dict, 'hs', exp_dir_path)
-    np.savetxt(os.path.join(exp_dir_path, "itl.csv"), losses_itl, delimiter=",")
-    np.savetxt(os.path.join(exp_dir_path, "oracle.csv"), losses_itl, delimiter=",")
 
     return {'losses_itl': losses_itl, 'losses_oracle': losses_oracle, 'losses_ltl_dict': losses_ltl_dict,
             'hs_dict': hs_dict, 'wbar-oracle': loss_wbar, 'inner-oracle': loss_inner_oracle,
@@ -232,7 +235,7 @@ def exp_gid_search(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), a
               'n_dims': n_dims, 'alpha': alphas, 'lmbd': lambdas, 'gamma': None, 'n_tasks_test': n_tasks_test,
               'n_test': n_test, 'val_perc': val_perc, 'inner_solver_str': inner_solver_str, 'w_bar': w_bar,
               'inner_solver_test_str': inner_solver_test_str, 'show_plot': False, 'exp_dir': exp_dir_path,
-              'verbose':verbose}
+              'verbose': verbose, 'save_res': False}
 
     results = par_grid_search(params, exp_f, n_processes=n_processes)
 
@@ -389,9 +392,10 @@ def grid_search_variance(exp_str='exp1', n_processes=10):
 
 
 if __name__ == '__main__':
-    #exp_gid_search('exp1', lambdas=[0.01, 0.1], alphas=[10, 100, 1000], y_snr=10, task_std=3, n_train=100, n_tasks=100,
-    #                inner_solver_str=['ssubgd'], w_bar=10, verbose=2, use_hyper_bounds=False)
-    grid_search_variance(exp_str='exp1', n_processes=20)
+    exp_gid_search('exp2', y_snr=10, task_std=4, n_train=50, n_tasks=100,
+                    inner_solver_str=['ssubgd'], w_bar=16, verbose=2, use_hyper_bounds=False)
+
+    #grid_search_variance(exp_str='exp1', n_processes=2)
     #grid_search_several_trials(exp_str='exp2', n_processes=30)
     #exp2(seed=0, y_snr=100, task_std=2, n_tasks=100, n_train=100, n_dims=30, alpha=100,
     #     lmbd=0.1, gamma=None, n_tasks_test=200, n_test=100, val_perc=0.0, inner_solver_str=['ssubgd'],
