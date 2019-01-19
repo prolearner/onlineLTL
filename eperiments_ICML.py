@@ -388,7 +388,7 @@ def grid_search_variance(exp_str='exp1', n_processes=10):
             for w_bar in [4, 16]:
                 exp_gid_search(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
                                n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
-                               use_hyper_bounds=True, n_tasks=1000)
+                               use_hyper_bounds=True, n_tasks=1000, show_plot=False)
 
 
 if __name__ == '__main__':
@@ -396,7 +396,7 @@ if __name__ == '__main__':
     #                inner_solver_str=['ssubgd'], w_bar=16, verbose=2, use_hyper_bounds=True)
     grid_search_variance(exp_str='exp1', n_processes=30)
     #grid_search_several_trials(exp_str='exp2', n_processes=30)
-    #exp2(seed=0, y_snr=100, task_std=2, n_tasks=100, n_train=100, n_dims=30, alpha=100,
-    #     lmbd=0.1, gamma=None, n_tasks_test=200, n_test=100, val_perc=0.0, inner_solver_str=['ssubgd'],
+    #exp2(seed=0, y_snr=10, task_std=2, n_tasks=100, n_train=50, n_dims=30, alpha=100, w_bar=16,
+    #     lmbd=0.05, gamma=None, n_tasks_test=200, n_test=100, val_perc=0.0, inner_solver_str=['ssubgd'],
     #     use_hyper_bounds=False,
     #     inner_solver_test_str='ssubgd', show_plot=True)
