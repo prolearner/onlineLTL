@@ -383,12 +383,12 @@ def grid_search_several_trials2(exp_str='exp1', n_processes=10):
 
 
 def grid_search_variance(exp_str='exp1', n_processes=10):
-    for n_train in [10, 50, 100]:
-        for tasks_std in [1, 2,  4, 8]:
-            for w_bar in [4, 16]:
-                exp_gid_search(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
-                               n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
-                               use_hyper_bounds=True, n_tasks=1000, show_plot=False)
+    for w_bar in [4, 16]:
+        for n_train in [10, 50, 100]:
+            for tasks_std in [1, 2,  4, 8, 16]:
+                    exp_gid_search(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
+                                   n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
+                                   use_hyper_bounds=True, n_tasks=1000, show_plot=False)
 
 
 if __name__ == '__main__':
