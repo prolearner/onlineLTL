@@ -278,7 +278,7 @@ def t_inner_algo(inner_solver_class=FISTA, seed=0, n_iter=1000):
 
 
 if __name__ == '__main__':
-    from eperiments_ICML import exp1
+    from experiments_ICML import exp1
 
     #exp1(seed=0)
     t_inner_algo(FISTA)

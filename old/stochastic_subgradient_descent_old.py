@@ -248,6 +248,6 @@ def LTL_evaluation(X, y, X_test, y_test, inner_solver, verbose=0):
 
 
 if __name__ == '__main__':
-    from eperiments_ICML import exp1
+    from experiments_ICML import exp1
 
     exp1(seed=0)

@@ -1,10 +1,11 @@
 import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 import numpy as np
 import os
 
-matplotlib.use('Agg')
 
 
 def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL', linestyle='-', color=None):
