@@ -10,6 +10,7 @@ import os
 
 EXP_FOLDER = 'exps'
 
+
 def make_exp_dir(experiment_name):
     now = datetime.datetime.now()
     experiment_path = experiment_name + '-' + str(now)
@@ -28,6 +29,7 @@ def save_exp_parameters(exp_parameters, exp_dir_path):
     import json
     with open(os.path.join(exp_dir_path, 'parameters.txt'), 'w') as file:
         file.write(json.dumps(param_serializable))  # use `json.loads` to do the reverse
+
 
 def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5,  w_bar=4, n_dims=30,
                  n_train_tasks=0, n_val_tasks=0):
@@ -61,7 +63,7 @@ def exp_exec(exp_str, n_tasks=80, w_bar=4, y_snr=100, task_std=2, seed=0, n_trai
              inner_solver_test_str='ssubgd', use_hyper_bounds=False, show_plot=False, verbose=1, save_res=True):
 
     loss, tasks_gen, exp_name = exp_selector(exp_str, seed, task_std, y_snr, val_perc, w_bar, n_dims,
-                                             n_train_tasks=n_tasks, n_val_tasks=20)
+                                             n_train_tasks=n_tasks, n_val_tasks=29)
 
     return exp(exp_name=exp_name, seed=seed, tasks_gen=tasks_gen, loss_class=loss,
                alpha=alpha, lmbd=lmbd, gamma=gamma, n_tasks=n_tasks, n_train=n_train, exp_dir=exp_dir,
@@ -412,6 +414,7 @@ def grid_search_variance(exp_str='exp1', n_processes=10):
 
 if __name__ == '__main__':
     exp_meta_val('school', y_snr=10, task_std=2, n_train=100, n_tasks=80, val_perc=0.5,
+                 lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-3, 3, num=100),
                  inner_solver_str=['ssubgd'], w_bar=16, verbose=2, use_hyper_bounds=True)
     #grid_search_variance(exp_str='exp1', n_processes=30)
     #grid_search_several_trials(exp_str='exp2', n_processes=30)
