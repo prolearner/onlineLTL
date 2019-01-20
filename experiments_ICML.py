@@ -307,6 +307,7 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
     print_metric_mean_and_std(losses_itl_dict, name=loss_name + " ITL")
     print_metric_mean_and_std(losses_ltl_dict, name=loss_name + " LTL")
+    print_metric_mean_and_std(loss_inner_initial, name=loss_name + " w = 0")
     if losses_oracle_dict is not None:
         print_metric_mean_and_std(losses_oracle_dict, name=loss_name + " Oracle")
 
