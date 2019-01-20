@@ -10,6 +10,9 @@ from matplotlib2tikz import save as tikz_save
 
 
 def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL', linestyle='-', color=None):
+    if metric is None:
+        return x
+
     y_mean_ltl = np.mean(metric, axis=-1)
     if len(y_mean_ltl.shape) == 0:
         y_mean_ltl = np.array([y_mean_ltl for _ in x])
@@ -29,17 +32,19 @@ def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL'
 def _plot_from_dict(plot_f, metric_dict, use_valid_str, alpha, x=None, label='online LTL', color='orange'):
     line_styles = [':', '-.', '--', '-']
     for is_name, metric in metric_dict.items():
-        out = _plot_array(plot_f, metric, use_valid_str, alpha, x=x, label=label+'-'+is_name, linestyle=line_styles.pop(),
+        if is_name != '':
+            label = label+' '+is_name
+
+        out = _plot_array(plot_f, metric, use_valid_str, alpha, x=x, label=label, linestyle=line_styles.pop(),
                 color=color)
     return out
 
 
 def _plot(metric, use_valid_str, alpha, x=None, label='online LTL', color=None, linestyle='-'):
-    if metric is not None:
-        if isinstance(metric, dict):
-            return _plot_from_dict(plt.plot, metric, use_valid_str, alpha, x, label=label, color=color)
-        else:
-            return _plot_array(plt.plot, metric, use_valid_str, alpha, x, label=label, color=color, linestyle=linestyle)
+    if isinstance(metric, dict):
+        return _plot_from_dict(plt.plot, metric, use_valid_str, alpha, x, label=label, color=color)
+    else:
+        return _plot_array(plt.plot, metric, use_valid_str, alpha, x, label=label, color=color, linestyle=linestyle)
 
 
 def plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metric_inner_oracle=None, metric_wbar=None,
