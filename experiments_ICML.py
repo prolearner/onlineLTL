@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import data_generator as gen
 from algorithms import meta_ssgd, LTL_evaluation, no_train_evaluation, \
@@ -6,6 +8,14 @@ from plots import plot_2fig
 from utils import print_metric_mean_and_std, save_nparray, make_exp_dir, save_exp_parameters
 from losses import HingeLoss, AbsoluteLoss, Loss
 import os
+
+
+parser = argparse.ArgumentParser(description='LTL online numpy experiments')
+parser.add_argument('--seed', type=int, default=0, metavar='S',
+                    help='random seed (default: 1)')
+parser.add_argument('--n-processes', type=int, default=30, metavar='N',
+                    help='n processes for grid search (default: 30)')
+
 
 EXP_FOLDER = 'exps'
 
@@ -354,6 +364,7 @@ def school_meta_val(seed=0, lambdas=np.logspace(-6, 3, num=10), alphas=(0.01, 0.
 
 
 if __name__ == '__main__':
+    args = parser.parse_args()
     #exp_meta_val('school', y_snr=10, task_std=2, n_train=100, n_tasks=80, val_perc=0.5, n_processes=40,
     #             lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-3, 3, num=10),
     #             inner_solver_str=['ssubgd'], w_bar=16, verbose=2, use_hyper_bounds=True)
@@ -365,4 +376,4 @@ if __name__ == '__main__':
     #    inner_solver_test_str='ssubgd', show_plot=True)
 
     #exp_meta_val('exp1', seed=0, lambdas=[0.01, 0.05], alphas=[10, 100])
-    school_meta_val(seed=0)
+    school_meta_val(seed=args.seed, n_processes=args.n_processes)
