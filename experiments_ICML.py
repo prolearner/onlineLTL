@@ -353,7 +353,7 @@ def grid_search_variance(exp_str='exp1', n_processes=10):
                              use_hyper_bounds=True, n_tasks=1000, show_plot=False)
 
 
-def school_meta_val(seed=0, lambdas=np.logspace(-6, 3, num=10), alphas=(0.01, 0.1, 1, 10, 100, 1000),
+def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-3, 4, num=10),
                  gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
