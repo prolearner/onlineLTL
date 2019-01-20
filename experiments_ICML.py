@@ -317,10 +317,13 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
     ltl_hyper_str = '_'.join([h + str(best_ltl['params'][h]) for h in ['lmbd', 'alpha']])
     itl_hyper_str = '_'.join([h + str(best_itl['params'][h]) for h in ['lmbd']])
+    exp_parameters['best_ltl'] = best_ltl['params']
+    exp_parameters['best_itl'] = best_itl['params']
 
     if best_oracle is not None:
         oracle_hyper_str = '_'.join([h + str(best_oracle['params'][h]) for h in ['lmbd']])
         losses_oracle_dict = {oracle_hyper_str: losses_oracle}
+        exp_parameters['best_oracle'] = best_oracle['params']
     else:
         losses_oracle_dict = None
 
