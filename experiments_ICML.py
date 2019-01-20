@@ -326,34 +326,16 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
             'wbar-oracle': loss_wbar, 'inner-oracle': loss_inner_oracle, 'zero-losses': loss_inner_initial}
 
 
-def grid_search_several_trials(exp_str='exp1', n_processes=10):
-    for n_train in [10, 100, 200, 1000]:
-        for tasks_std in [1, 2, 4]:
-            for y_snr in [5, 10, 100]:
-                exp_meta_val(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=y_snr,
-                             n_processes=n_processes)
-
-
-def grid_search_several_trials2(exp_str='exp1', n_processes=10):
-    for n_train in [10, 50, 100]:
-        for tasks_std in [0.2, 0.4, 4, 20]:
-            for w_bar in [40, 4, 1]:
-                tasks_std = w_bar * tasks_std / 4
-                exp_meta_val(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
-                             n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
-                             use_hyper_bounds=True)
-
-
-def grid_search_variance(exp_str='exp1', n_processes=10):
+def grid_search_variance(exp_str='exp2', seed=0, n_processes=10):
     for w_bar in [16, 32]:
         for n_train in [10, 50, 200]:
             for tasks_std in [1, 2, 4, 8]:
-                exp_meta_val(exp_str=exp_str, n_train=n_train, task_std=tasks_std, y_snr=10,
+                exp_meta_val(exp_str=exp_str, seed=seed, n_train=n_train, task_std=tasks_std, y_snr=10,
                              n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
                              use_hyper_bounds=True, n_tasks=1000, show_plot=False)
 
 
-def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-3, 4, num=10),
+def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-6, 1, num=10),
                  gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
