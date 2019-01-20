@@ -67,8 +67,8 @@ def plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metri
 
     if save_dir_path is not None:
         pylab.savefig(os.path.join(save_dir_path, filename+'.png'))
-        pylab.savefig(os.path.join(save_dir_path, filename+'.pgf'))
-        tikz_save(os.path.join(save_dir_path, filename+'.txt'))
+        #pylab.savefig(os.path.join(save_dir_path, filename+'.pgf'))
+        #tikz_save(os.path.join(save_dir_path, filename+'.txt'))
     if show_plot:
         plt.show()
     else:
