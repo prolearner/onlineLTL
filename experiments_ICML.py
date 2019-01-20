@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+from numpy.linalg import  norm
 import data_generator as gen
 from algorithms import meta_ssgd, LTL_evaluation, no_train_evaluation, \
     lmbd_theory, lmbd_theory_meta, alpha_theory, inner_solver_selector
@@ -18,6 +19,11 @@ parser.add_argument('--n-processes', type=int, default=30, metavar='N',
 
 
 EXP_FOLDER = 'exps'
+
+
+def print_similarities(h, w_bar, t):
+    print('l2 dist h-%d, w_bar:  %f' % (t, norm(h - w_bar)))
+    print('cos sim h-%d, w_bar:  %f' % (t, (h @ w_bar) / (norm(h) * norm(w_bar) + 1e-10)))
 
 
 def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_dims=30,
@@ -117,7 +123,7 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
     print('hs :', hs)
     if oracle_valid is not None:
         for i, h in enumerate(hs):
-            print('h-%d dot w_bar:  %f' % (i, h @ oracle_valid['w_bar']))
+            print_similarities(h, oracle_valid['w_bar'], i)
 
     metric_name = loss_class.name
     print_metric_mean_and_std(losses_itl, name=metric_name + " ITL")
@@ -189,13 +195,12 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
     params['lmbd'] = HyperList(lambdas)
     params['alpha'] = HyperList(alphas)
 
-    # grid search over tasks
+    # grid search over hyperparameters
     params['exp_dir'] = exp_dir_path
     params['show_plot'] = False
     params['save_res'] = False
     results = par_grid_search(params, exp, n_processes=n_processes)
 
-    # add bound parameters in curve
     data_test, oracle_test = tasks_gen(n_tasks=n_tasks_test, n_train=n_train, n_test=n_test, sel='test')
 
     def itl_metric(res):
@@ -240,6 +245,9 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
                                            inner_solver=inner_solver, verbose=verbose)
 
             print(str(t) + '-' + 'loss-test  : ', np.mean(losses_ltl[t]), np.std(losses_ltl[t]))
+
+            if oracle_test is not None:
+                print_similarities(hs[t], oracle_test['w_bar'], t)
 
         losses_ltl_dict[is_name] = losses_ltl
         hs_dict[is_name] = hs
@@ -335,7 +343,7 @@ def grid_search_variance(exp_str='exp2', seed=0, n_processes=10):
                              use_hyper_bounds=True, n_tasks=1000, show_plot=False)
 
 
-def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-6, 1, num=10),
+def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-4, 3, num=10),
                  gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
@@ -348,7 +356,9 @@ def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logsp
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    #exp_meta_val('school', y_snr=10, task_std=2, n_train=100, n_tasks=80, val_perc=0.5, n_processes=40,
+
+    # exp_meta_val('school', y_snr=10, task_std=2, n_train=100, n_tasks=80, val_perc=0.5, n_processes=40,
+
     #             lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-3, 3, num=10),
     #             inner_solver_str=['ssubgd'], w_bar=16, verbose=2, use_hyper_bounds=True)
     # grid_search_variance(exp_str='exp1', n_processes=30)
@@ -358,5 +368,7 @@ if __name__ == '__main__':
     #     use_hyper_bounds=False,
     #    inner_solver_test_str='ssubgd', show_plot=True)
 
-    #exp_meta_val('exp1', seed=0, lambdas=[0.01, 0.05], alphas=[10, 100])
-    school_meta_val(seed=args.seed, n_processes=args.n_processes)
+    #exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes,
+    #             lambdas=[0.01, 0.05], alphas=[10, 100], inner_solver_test_str='subgd')
+    school_meta_val(seed=args.seed, n_processes=args.n_processes,
+                    inner_solver_test_str='subgd')

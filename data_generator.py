@@ -102,7 +102,7 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         center = 0
 
         X_n = np.random.randn(n_train + n_test, n_dims)
-        X_n = center + X_n / np.linalg.norm(X_n, axis=1, keepdims=True)
+        X_n = center + X_n / norm(X_n, axis=1, keepdims=True)
 
         w = w_bar + task_std * np.random.randn(n_dims)
 
