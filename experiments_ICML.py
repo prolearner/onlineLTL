@@ -416,7 +416,7 @@ def grid_search_variance(exp_str='exp1', n_processes=10):
 
 
 if __name__ == '__main__':
-    exp_meta_val('school', y_snr=10, task_std=2, n_train=100, n_tasks=80, val_perc=0.5,
+    exp_meta_val('school', y_snr=10, task_std=2, n_train=100, n_tasks=80, val_perc=0.5, n_processes=40,
                  lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-3, 3, num=100),
                  inner_solver_str=['ssubgd'], w_bar=16, verbose=2, use_hyper_bounds=True)
     #grid_search_variance(exp_str='exp1', n_processes=30)
