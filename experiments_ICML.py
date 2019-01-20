@@ -160,7 +160,7 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
             'lmbd_oracle': lmbd_oracle}
 
 
-def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alphas=(0.01, 0.1, 1, 10, 100, 1000),
+def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alphas=np.logspace(-6, 3, num=10),
                  gamma=None, n_processes=30, w_bar=4, y_snr=100, task_std=1, n_tasks=100, n_train=100, n_dims=30,
                  n_tasks_test=200, n_test=100, val_perc=0.0, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
@@ -335,9 +335,9 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
 
 def grid_search_variance(exp_str='exp2', seed=0, n_processes=10):
-    for w_bar in [16, 32]:
-        for n_train in [10, 50, 200]:
-            for tasks_std in [1, 2, 4, 8]:
+    for w_bar in [16, 32, 4]:
+        for tasks_std in [1, 2, 4, 8]:
+            for n_train in [10, 100, 1000]:
                 exp_meta_val(exp_str=exp_str, seed=seed, n_train=n_train, task_std=tasks_std, y_snr=10,
                              n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
                              use_hyper_bounds=True, n_tasks=1000, show_plot=False)
@@ -368,6 +368,7 @@ if __name__ == '__main__':
     #     use_hyper_bounds=False,
     #    inner_solver_test_str='ssubgd', show_plot=True)
 
-    exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes, alphas=100, lambdas=0.01,
-                 n_tasks=10, n_train=10)
+    #exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes, alphas=100, lambdas=0.01,
+    #             n_tasks=10, n_train=10)
+    grid_search_variance('exp2', seed=args.seed, n_processes=args.n_processes)
     #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='subgd')
