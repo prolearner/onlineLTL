@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import json
 import os
@@ -69,3 +71,23 @@ class PrintLevels:
     inner_eval = 2
     outer_train = 1
     outer_eval = 0
+
+
+def make_exp_dir(experiment_name):
+    now = datetime.datetime.now()
+    experiment_path = experiment_name + '-' + str(now)
+    os.makedirs(experiment_path)
+    return experiment_path
+
+
+def save_exp_parameters(exp_parameters, exp_dir_path):
+    param_serializable = {}
+    for k, v in exp_parameters.items():
+        if is_jsonable(v):
+            param_serializable[k] = v
+        else:
+            param_serializable[k] = str(v)
+
+    import json
+    with open(os.path.join(exp_dir_path, 'parameters.txt'), 'w') as file:
+        file.write(json.dumps(param_serializable))  # use `json.loads` to do the reverse

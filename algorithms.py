@@ -282,3 +282,44 @@ if __name__ == '__main__':
 
     #exp1(seed=0)
     t_inner_algo(FISTA)
+
+
+def inner_solver_selector(solver_str):
+    if solver_str == 'subgd':
+        return InnerSubGD
+    elif solver_str == 'ssubgd':
+        return InnerSSubGD
+    elif solver_str == 'fista':
+        return FISTA
+    elif solver_str == 'ista':
+        return ISTA
+    else:
+        raise NotImplementedError('inner solver {} not found'.format(solver_str))
+
+
+def train_and_evaluate(inner_solvers, data_train, data_val, name='', verbose=0):
+    losses_train = []
+    for i in range(len(inner_solvers)):
+        losses_train.append(LTL_evaluation(data_train['X_train'], data_train['Y_train'],
+                                           data_train['X_test'], data_train['Y_test'],
+                                           inner_solvers[i], verbose=verbose))
+
+    best_solver_idx = np.argmin(np.mean(np.concatenate([np.expand_dims(l, 0) for l in losses_train]), axis=1))
+    print('best ' + name + ': ' + str(inner_solvers[best_solver_idx].lmbd))
+
+    losses_val = LTL_evaluation(data_val['X_train'], data_val['Y_train'],
+                                data_val['X_test'], data_val['Y_test'],
+                                inner_solvers[best_solver_idx], verbose=verbose)
+    return losses_val, inner_solvers[best_solver_idx]
+
+
+def save_3d_csv(path, arr3d: np.ndarray, hyper_str=None):
+    for i in range(arr3d.shape[1]):
+        str = path + '-'
+        if hyper_str:
+            str += hyper_str[i]
+        else:
+            str += hyper_str[i]
+        str += '.csv'
+
+        np.savetxt(str, arr3d[:, i], delimiter=",")
