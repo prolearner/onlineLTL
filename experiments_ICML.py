@@ -160,7 +160,7 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     loss_class, tasks_gen, inner_exp_name = exp_selector(exp_str, seed=seed, task_std=task_std, y_snr=y_snr,
-                                                   n_train_tasks=n_tasks, n_val_tasks=29, n_dims=n_dims,
+                                                   n_train_tasks=n_tasks, n_val_tasks=20, n_dims=n_dims,
                                                    val_perc=val_perc, w_bar=w_bar)
 
     params = {'exp_name': inner_exp_name, 'tasks_gen': tasks_gen, 'loss_class': loss_class, 'n_tasks': n_tasks,
