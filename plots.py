@@ -7,7 +7,6 @@ import numpy as np
 import os
 
 
-
 def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL', linestyle='-', color=None):
     y_mean_ltl = np.mean(metric, axis=-1)
     y_std_ltl = np.std(metric, axis=-1)
@@ -30,11 +29,11 @@ def _plot_from_dict(plot_f, metric_dict, use_valid_str, alpha, x=None, label='on
     return out
 
 
-def _plot(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL', color=None):
+def _plot(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL', color=None, linestyle='-'):
     if isinstance(metric, dict):
         return _plot_from_dict(plot_f, metric, use_valid_str, alpha, x, label=label, color=color)
     else:
-        return _plot_array(plot_f, metric, use_valid_str, alpha, x, label=label, color=color)
+        return _plot_array(plot_f, metric, use_valid_str, alpha, x, label=label, color=color, linestyle=linestyle)
 
 
 def plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metric_inner_oracle=None, metric_wbar=None,
@@ -45,31 +44,18 @@ def plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metri
     x = _plot(plt.plot, metric_ltl, use_valid_str, alpha, label='online LTL', color='orange')
 
     _plot(plt.axhline, metric_itl, '', alpha, x=x, label='ITL', color='red')
-    _plot(plt.axhline, metric_oracle, '', alpha, x=x, label='Oracle', color='green')
+
+    if metric_oracle is not None:
+        _plot(plt.axhline, metric_oracle, '', alpha, x=x, label='Oracle', color='green')
 
     if metric_inner_initial is not None:
-        y_mean_ii = np.mean(metric_inner_initial)
-        y_std_ii = np.std(metric_inner_initial)
-
-        plt.axhline(y_mean_ii, label='w = 0', color='blue', linestyle='--')
-        plt.fill_between(x=x, y1=y_mean_ii + y_std_ii / 2, y2=y_mean_ii - y_std_ii / 2, color='blue',
-                         alpha=alpha)
+        _plot(plt.axhline, metric_inner_initial, '', alpha, x=x, label='w = 0', color='blue', linestyle='--')
 
     if metric_inner_oracle is not None:
-        y_mean_io = np.mean(metric_inner_oracle)
-        y_std_io = np.std(metric_inner_oracle)
-
-        plt.axhline(y_mean_io, label=r'$w = w_\mu$', color='purple', linestyle='--')
-        plt.fill_between(x=x, y1=y_mean_io + y_std_io / 2, y2=y_mean_io - y_std_io / 2, color='purple',
-                         alpha=alpha)
+        _plot(plt.axhline, metric_inner_oracle, '', alpha, x=x, label=r'$w = w_\mu$', color='purple', linestyle='--')
 
     if metric_wbar is not None:
-        y_mean_wbar = np.mean(metric_wbar)
-        y_std_wbar = np.std(metric_wbar)
-
-        plt.axhline(y_mean_wbar, label=r'$w = \bar{w}$', color='green', linestyle='-.')
-        plt.fill_between(x=x, y1=y_mean_wbar + y_std_wbar / 2, y2=y_mean_wbar - y_std_wbar / 2, color='green',
-                         alpha=alpha)
+        _plot(plt.axhline, metric_wbar, '', alpha, x=x, label=r'$w = \bar{w}$', color='green', linestyle='-.')
 
     plt.title(title)
     plt.ylabel(y_label)

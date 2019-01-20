@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
+import scipy.io as sio
+from numpy.linalg import norm
 
 
 class TasksGenerator:
@@ -32,13 +34,11 @@ class TasksGenerator:
         # returns sqrt(2)*Var_h in paper notation
         return np.sqrt((self.w_bar - h).T @ (self.w_bar - h) + self.task_std ** 2)
 
-    def gen_tasks(self, n_tasks=None, n_train=None, n_test=None, n_dims=None, y_snr=None, task_std=None):
+    def gen_tasks(self, n_tasks=None, n_train=None, n_test=None, y_snr=None, task_std=None, **kwargs):
         if n_tasks is None:
             n_tasks = self.n_tasks
         if n_train is None:
             n_train = self.n_train
-        if n_dims is None:
-            n_dims = self.n_dims
         if y_snr is None:
             y_snr = self.y_snr
         if task_std is None:
@@ -46,11 +46,11 @@ class TasksGenerator:
         if n_test is None:
             n_test = self.n_test
 
-        return self._task_gen_func(n_tasks, self.val_perc, n_dims, n_train, n_test, y_snr, task_std,
+        return self._task_gen_func(n_tasks, self.val_perc, self.n_dims, n_train, n_test, y_snr, task_std,
                                    w_bar=self.w_bar)
 
-    def __call__(self, n_tasks=None, n_train=None, n_test=None,  n_dims=None, y_snr=None, task_std=None):
-        return self.gen_tasks(n_tasks, n_train, n_test, n_dims, y_snr, task_std)
+    def __call__(self, n_tasks=None, n_train=None, n_test=None, y_snr=None, task_std=None, **kwargs):
+        return self.gen_tasks(n_tasks, n_train, n_test, y_snr, task_std)
 
 
 def regression_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20, n_test=100, y_snr=5, task_std=1
@@ -178,6 +178,84 @@ def regression_tasks_generator_v2(n_tasks=120, val_perc=0.5, n_dims=30, n_train=
     return data, oracle
 
 
+class RealDatasetGenerator:
+    def __init__(self, gen_f, seed=0, n_train_tasks=80, n_val_tasks=20, val_perc=0.5):
+        np.random.seed(seed)
+        self.seed = seed
+        self.n_tasks = 139
+        self.n_train_tasks = n_train_tasks
+        self.n_val_tasks = n_val_tasks
+        self.n_test_tasks = self.n_tasks - n_train_tasks - n_val_tasks
+        self.val_perc = val_perc
+        self.n_dims = 26
+
+        self.data_train, self.data_val, self.data_test = gen_f(n_train_tasks, n_val_tasks, val_perc)
+        0
+
+    def gen_tasks(self, sel='train', **kwargs):
+        if sel == 'train':
+            return self.data_train, None
+        if sel == 'val':
+            return self.data_val, None
+        if sel == 'test':
+            return self.data_test, None
+
+    def __call__(self, sel='train', **kwargs):
+        return self.gen_tasks(sel)
+
+
+def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
+
+    n_tasks = 139
+
+    task_shuffled = np.random.permutation(n_tasks)
+
+    task_range_tr = task_shuffled[0:n_train_tasks]
+    task_range_val = task_shuffled[n_train_tasks:n_train_tasks + n_val_tasks]
+    task_range_test = task_shuffled[(n_train_tasks + n_val_tasks):]
+
+    temp = sio.loadmat('schoolData.mat')
+
+    all_data = temp['X'][0]
+    all_labels = temp['Y'][0]
+
+    data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+    data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+    data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+
+    def fill_with_tasks(data, task_range, test_perc=0.5):
+        for task_idx in task_range:
+            if test_perc > 0.0:
+                X_train, X_test, Y_train, Y_test = train_test_split(all_data[task_idx].T, all_labels[task_idx],
+                                                                  test_size=val_perc)
+                Y_test = Y_test.ravel()
+                X_test = X_test / norm(X_test, axis=1, keepdims=True)
+            else:
+                X_train = all_data[task_idx].T
+                Y_train = all_labels[task_idx]
+                X_test = []
+                Y_test = []
+
+            Y_train = Y_train.ravel()
+            X_train = X_train / norm(X_train, axis=1, keepdims=True)
+            X_val = []
+            Y_val = []
+
+            data['X_train'].append(X_train)
+            data['X_val'].append(X_val)
+            data['X_test'].append(X_test)
+            data['Y_train'].append(Y_train)
+            data['Y_val'].append(Y_val)
+            data['Y_test'].append(Y_test)
+
+    # make training, validation and test tasks:
+    fill_with_tasks(data_train, task_range_tr, test_perc=0.0)
+    fill_with_tasks(data_val, task_range_val, test_perc=val_perc)
+    fill_with_tasks(data_test, task_range_test, test_perc=val_perc)
+
+    return data_train, data_val, data_test
+
+
 if __name__ == '__main__':
-    data, oracle = regression_tasks_generator()
-    print(data, oracle)
+    data = schools_data_gen()
+    print(data)
