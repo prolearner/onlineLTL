@@ -368,6 +368,6 @@ if __name__ == '__main__':
     #     use_hyper_bounds=False,
     #    inner_solver_test_str='ssubgd', show_plot=True)
 
-    exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='subgd')
-    #school_meta_val(seed=args.seed, n_processes=args.n_processes,
-    #                inner_solver_test_str='subgd')
+    exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes, alphas=100, lambdas=0.01,
+                 n_tasks=10, n_train=10)
+    #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='subgd')
