@@ -4,6 +4,7 @@ import data_generator as gen
 from losses import Loss
 from utils import PrintLevels
 
+
 class InnerSolver:
     def __init__(self, lmbd=0.0, h=0.0, loss_class:Loss=None, gamma=None):
         self.lmbd = lmbd
@@ -184,7 +185,7 @@ class InnerSubGD(InnerSolver):
         return self.v
 
 
-def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_test: InnerSolver,
+def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_test: InnerSolver, metric_dict={},
               eval_online=True, verbose=0):
     dim = X[0].shape[1]
     n_tasks = len(X)  # T
@@ -192,6 +193,9 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
 
     hs = np.zeros((n_tasks+1, dim))
     losses_val = np.zeros((n_tasks+1, n_tasks_val))
+    metric_results_dict = {'loss': np.zeros((n_tasks+1, n_tasks_val))}
+    for metric_name in metric_dict:
+        metric_results_dict[metric_name] = np.zeros((n_tasks+1, n_tasks_val))
 
     for t in range(n_tasks+1):
         if t < n_tasks:
@@ -202,13 +206,17 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
             inner_solver_test.init_from_solver(inner_solver)
             inner_solver_test.h = hs[:t+1].mean(axis=0)
 
-            losses_val[t] = LTL_evaluation(X=data_valid['X_train'], y=data_valid['Y_train'],
+            losses_val[t], mr_dict = LTL_evaluation(X=data_valid['X_train'], y=data_valid['Y_train'],
                                            X_test=data_valid['X_test'], y_test=data_valid['Y_test'],
-                                           inner_solver=inner_solver_test, verbose=verbose)
-            if verbose > PrintLevels.outer_eval:
-                print(str(t) + '-' + 'loss-val  : ', np.mean(losses_val[t]), np.std(losses_val[t]))
+                                           inner_solver=inner_solver_test, metric_dict=metric_dict, verbose=verbose)
+            for metric_name, res in mr_dict.items():
+                metric_results_dict[metric_name][t] = res
 
-    return hs, losses_val
+            if verbose > PrintLevels.outer_eval:
+                for metric_name, res in mr_dict.items():
+                    print(str(t) + '-' + metric_name + '-val  : ', np.mean(res), np.std(res))
+
+    return hs, losses_val, metric_results_dict
 
 
 def lmbd_theory(rx, L, sigma_h, n):
@@ -223,40 +231,56 @@ def alpha_theory(rx, L, w_bar, T, n):
     return np.sqrt(2)*np.linalg.norm(w_bar)/(L*rx) * np.sqrt(1/(T*(1 + 4*(np.log(n) + 1)/n)))
 
 
-def no_train_evaluation(X_test, y_test, inner_solvers, verbose=0):
+def no_train_evaluation(X_test, y_test, inner_solvers, metric_dict={}, verbose=0):
     n_tasks = len(X_test)  # T
 
     losses = np.zeros(n_tasks)
-    accs = np.zeros(n_tasks)
+    metric_results_dict = {}
+    for metric_name in metric_dict:
+        metric_results_dict[metric_name] = np.zeros(n_tasks)
     for t in range(n_tasks):
         # Testing
         losses[t] = inner_solvers[t].evaluate(X_test[t], y_test[t])
-        accs[t] = np.mean(np.maximum(np.sign(inner_solvers[t].predict(X_test[t])*y_test[t]), 0))
+        for metric_name, metric_f in metric_dict.items():
+            metric_results_dict[metric_name][t] = metric_f(y_test[t], inner_solvers[t].predict(X_test[t]))
 
         if verbose > PrintLevels.outer_eval:
             print('loss-test', losses[t])
-            print('accs-test', accs[t])
+            for metric_name, res in metric_results_dict.items():
+                print(metric_name + '-test', res[t])
 
-    return losses
+    metric_results_dict['loss'] = losses
+    return losses, metric_results_dict
 
 
-def LTL_evaluation(X, y, X_test, y_test, inner_solver, verbose=0):
+def LTL_evaluation(X, y, X_test, y_test, inner_solver, metric_dict={}, verbose=0):
     n_tasks = len(X)  # T
 
     losses = np.zeros(n_tasks)
-    accs = np.zeros(n_tasks)
+    metric_results_dict = {}
+    for metric_name in metric_dict:
+        metric_results_dict[metric_name] = np.zeros(n_tasks)
+
+    #accs = np.zeros(n_tasks)
     for t in range(n_tasks):
         inner_solver(X_n=X[t], y_n=y[t], verbose=verbose)
 
         # Testing
         losses[t] = inner_solver.evaluate(X_test[t], y_test[t])
-        accs[t] = np.mean(np.maximum(np.sign(inner_solver.predict(X_test[t])*y_test[t]), 0))
+        for metric_name, metric_f in metric_dict.items():
+            metric_results_dict[metric_name][t] = metric_f(y_test[t], inner_solver.predict(X_test[t]))
+
+        # accs[t] = np.mean(np.maximum(np.sign(inner_solver.predict(X_test[t])*y_test[t]), 0))
 
         if verbose > PrintLevels.inner_eval:
             print('loss-test', losses[t])
-            print('accs-test', accs[t])
+            for metric_name, res in metric_results_dict.items():
+                print(metric_name + '-test', res[t])
 
-    return losses
+
+            # print('accs-test', accs[t])
+    metric_results_dict['loss'] = losses
+    return losses, metric_results_dict
 
 
 # Tests

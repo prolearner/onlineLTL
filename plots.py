@@ -33,9 +33,10 @@ def _plot_from_dict(plot_f, metric_dict, use_valid_str, alpha, x=None, label='on
     line_styles = [':', '-.', '--', '-']
     for is_name, metric in metric_dict.items():
         if is_name != '':
-            label = label+' '+is_name
-
-        out = _plot_array(plot_f, metric, use_valid_str, alpha, x=x, label=label, linestyle=line_styles.pop(),
+            li = label+' '+is_name
+        else:
+            li = label
+        out = _plot_array(plot_f, metric, use_valid_str, alpha, x=x, label=li, linestyle=line_styles.pop(),
                 color=color)
     return out
 
@@ -71,8 +72,7 @@ def plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metri
         #tikz_save(os.path.join(save_dir_path, filename+'.txt'))
     if show_plot:
         plt.show()
-    else:
-        plt.close()
+    plt.close()
 
 
 def plot_2fig(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metric_inner_oracle=None,
