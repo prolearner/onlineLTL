@@ -42,7 +42,7 @@ def main():
     #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='ssubgd', alphas=[0.01, 0.1],
     #                lambdas=[10, 1])
 
-    exp_multi_seed('exp1', n_train=10, n_tasks=100, w_bar=4, y_snr=1, task_std=1,
+    exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
 
@@ -297,10 +297,10 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
     exp_parameters['best_itl'] = best_itl['params']
 
     if best_oracle is not None:
-        oracle_hyper_str = '_'.join([h + str(best_oracle['params'][h]) for h in ['lmbd']])
+        # oracle_hyper_str = '_'.join([h + str(best_oracle['params'][h]) for h in ['lmbd']])
         m_oracle_dict = {}
         for mn in m_itl:
-            m_oracle_dict[mn] = {oracle_hyper_str: m_oracle[mn]}
+            m_oracle_dict[mn] = {'': m_oracle[mn]}
         exp_parameters['best_oracle'] = best_oracle['params']
     else:
         m_oracle_dict = None
