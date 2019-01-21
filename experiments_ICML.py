@@ -428,13 +428,13 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
             hs_dict = avg_metrics['hs_dict']
             m_inner_initial = avg_metrics['m_inner_initial']
 
+            theory_str='th'
             print_results(m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_initial)
             plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
                          name=theory_str, show_plot=show_plot)
             save_results(exp_dir_path, exp_parameters, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle,
                          m_inner_initial, m_wbar, hs_dict)
 
-            theory_str='th'
             for mn in avg_metrics['m_itl_dict']:
                 m_oracle_dict[mn].pop(theory_str, None)
                 m_itl_dict[mn].pop(theory_str, None)
