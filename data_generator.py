@@ -130,7 +130,7 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         W_true[:, i] = w.ravel()
 
     data = {'X_train': X_train, 'Y_train': Y_train, 'X_val': X_val, 'Y_val': Y_val, 'X_test': X_test, 'Y_test': Y_test}
-    oracle = {'w_bar': 100*w_bar, 'W_true': 100*W_true}
+    oracle = {'w_bar': 50*w_bar, 'W_true': 50*W_true}
     return data, oracle
 
 

@@ -41,9 +41,16 @@ def main():
     #grid_search_variance('exp2', seed=args.seed, n_processes=args.n_processes)
     #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='ssubgd', alphas=[0.01, 0.1],
     #                lambdas=[10, 1])
-    exp_75()
-    #exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
-    #              use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+    exp_class()
+
+
+def exp_class():
+    exp_multi_seed('exp2', n_train=10, n_tasks=100, w_bar=4, y_snr=1, task_std=0.5,
+                  use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
+def exp_reg():
+    exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
+                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
 
 def exp_75():
