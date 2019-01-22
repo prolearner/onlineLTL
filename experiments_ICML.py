@@ -43,13 +43,22 @@ def main():
     #                lambdas=[10, 1])
     exp1_school()
 
+
 def exp_blank_ms():
     exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
+def lenk_one():
+    lenk_meta_val(lambdas=0.01, alphas=10)
+
+def school_one():
+    school_meta_val(lambdas=0.01, alphas=10)
 
 def exp1_school():
     school_multi_seed(seeds=range(30))
+
+def exp1_len():
+    lenk_multi_seed()
 
 
 def exp_reg_explore():
@@ -108,6 +117,16 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
         loss = AbsoluteLoss
         val_metric = 'neg exp variance'
         metric_dict = {'neg exp variance': ne_exp_var}
+    elif exp_str == 'lenk':
+        tasks_gen = gen.RealDatasetGenerator(gen_f=gen.computer_data_gen,
+                                             seed=seed, n_train_tasks=n_train_tasks,
+                                             n_val_tasks=n_val_tasks,
+                                             val_perc=val_perc)
+        exp_name = 'expLenk' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks' + str(tasks_gen.n_tasks) \
+                   + 'dim' + str(tasks_gen.n_dims)
+        loss = HingeLoss
+        val_metric = 'loss'
+        metric_dict = {}
     else:
         raise NotImplementedError('exp: {} not implemented'.format(exp_str))
 
@@ -536,6 +555,28 @@ def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100)
     return exp_multi_seed(exp_str='school', seeds=seeds, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
                  n_tasks_test=n_val_tasks, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
+                 save_res=save_res, verbose=verbose)
+
+
+def lenk_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
+                 gamma=None, n_processes=30, n_tasks=100, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
+
+    return exp_meta_val(exp_str='school', seed=seed, lambdas=lambdas, alphas=alphas,
+                 gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
+                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
+                 save_res=save_res, verbose=verbose)
+
+
+def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
+                 gamma=None, n_processes=30, n_tasks=100, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
+
+    return exp_multi_seed(exp_str='school', seeds=seeds, lambdas=lambdas, alphas=alphas,
+                 gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
+                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 

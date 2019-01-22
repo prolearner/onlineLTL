@@ -190,15 +190,15 @@ class RealDatasetGenerator:
     def __init__(self, gen_f, seed=0, n_train_tasks=80, n_val_tasks=20, val_perc=0.5):
         np.random.seed(seed)
         self.seed = seed
-        self.n_tasks = 139
-        self.n_train_tasks = n_train_tasks
-        self.n_val_tasks = n_val_tasks
-        self.n_test_tasks = self.n_tasks - n_train_tasks - n_val_tasks
         self.val_perc = val_perc
-        self.n_dims = 26
 
         self.data_train, self.data_val, self.data_test = gen_f(n_train_tasks, n_val_tasks, val_perc)
-        0
+
+        self.n_train_tasks = len(self.data_train['Y_train'])
+        self.n_val_tasks = len(self.data_val['Y_train'])
+        self.n_test_tasks = len(self.data_test['Y_train'])
+        self.n_tasks = self.n_test_tasks + self.n_val_tasks + self.n_train_tasks
+        self.n_dims = self.data_train['X_train'][0].shape[1]
 
     def gen_tasks(self, sel='train', **kwargs):
         if sel == 'train':
@@ -212,13 +212,83 @@ class RealDatasetGenerator:
         return self.gen_tasks(sel)
 
 
-def computer_data_gen():
+def threshold_for_classifcation(Y, th):
+    Y_bc = np.ones_like(Y)
+    Y_bc[Y < th] = -1
+    return Y_bc
 
-    #
+
+def computer_data_gen(n_train_tasks=110, n_val_task=0, val_perc=0.5, threshold=5):
 
     temp = sio.loadmat('lenk_data.mat')
-    train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (16 profiles of 180 elements)
-    test_data = temp['Testdata'] # 720x15 last feature is y (score from 0 to 10) (4 profiles of 180 elements)
+    train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (144 tasks of 20 elements)
+    test_data = temp['Testdata'] # 720x15 last feature is y (score from 0 to 10) (26 tasks of 20 elements)
+
+    Y = train_data[:, 14]
+    Y_test = test_data[:, 14]
+    X = train_data[:, :14]
+    X_test = test_data[:, :14]
+
+    print('Y median', np.mean(Y))
+    print('Y mean', np.median(Y))
+
+    Y = threshold_for_classifcation(Y, threshold)
+    Y_test = threshold_for_classifcation(Y_test, threshold)
+
+    n_tasks = 180
+    n_tasks_test = 45
+    ne = 16  # numer of elements per task
+
+    def split_tasks(data, number_of_tasks, number_of_elements):
+        return [data[i * number_of_elements:(i + 1) * number_of_elements] for i in range(number_of_tasks)]
+
+    X = split_tasks(X, n_tasks, ne)
+    Y = split_tasks(Y, n_tasks, ne)
+    X_test = split_tasks(X_test, n_tasks_test, ne)
+    Y_test = split_tasks(Y_test, n_tasks_test, ne)
+
+    task_shuffled = np.random.permutation(n_tasks)
+
+    task_range_tr = task_shuffled[0:n_train_tasks]
+    task_range_val = task_shuffled[n_train_tasks:]
+    task_range_test = np.random.permutation(n_tasks_test)
+
+    data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+    data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+    data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+
+    def fill_with_tasks(data, task_range, data_m, labels_m, test_perc=0.5):
+        for task_idx in task_range:
+            example_shuffled = np.random.permutation(len(data_m[task_idx]))
+            X, Y = data_m[task_idx][example_shuffled], labels_m[task_idx][example_shuffled]
+            if test_perc > 0.0:
+                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
+                Y_test = Y_test.ravel()
+                X_test = X_test
+            else:
+                X_train = X
+                Y_train = Y
+                X_test = []
+                Y_test = []
+
+            Y_train = Y_train.ravel()
+            X_train = X_train
+            X_val = []
+            Y_val = []
+
+            data['X_train'].append(X_train)
+            data['X_val'].append(X_val)
+            data['X_test'].append(X_test)
+            data['Y_train'].append(Y_train)
+            data['Y_val'].append(Y_val)
+            data['Y_test'].append(Y_test)
+
+    # make training, validation and test tasks:
+    fill_with_tasks(data_train, task_range_tr, X, Y, test_perc=0.0)
+    fill_with_tasks(data_val, task_range_val, X, Y, test_perc=val_perc)
+    fill_with_tasks(data_test, task_range_test, X_test, Y_test, test_perc=val_perc)
+
+    return data_train, data_val, data_test
 
 
 def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
@@ -241,15 +311,17 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
     data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
 
     def fill_with_tasks(data, task_range, test_perc=0.5):
+
         for task_idx in task_range:
+            example_shuffled = np.random.permutation(len(all_labels[task_idx]))
+            X, Y = all_data[task_idx][example_shuffled].T, all_labels[task_idx][example_shuffled]
             if test_perc > 0.0:
-                X_train, X_test, Y_train, Y_test = train_test_split(all_data[task_idx].T, all_labels[task_idx],
-                                                                  test_size=val_perc)
+                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
                 Y_test = Y_test.ravel()
                 X_test = X_test / norm(X_test, axis=1, keepdims=True)
             else:
-                X_train = all_data[task_idx].T
-                Y_train = all_labels[task_idx]
+                X_train = X
+                Y_train = Y
                 X_test = []
                 Y_test = []
 
@@ -274,4 +346,5 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
 
 if __name__ == '__main__':
-    computer_data_gen()
+    print(schools_data_gen())
+    print(computer_data_gen())
