@@ -45,7 +45,7 @@ def main():
 
 
 def exp1_school():
-    school_meta_val()
+    school_multi_seed()
 
 
 def exp_reg_explore():
@@ -233,7 +233,7 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
     loss_class, tasks_gen, inner_exp_name,\
         metric_dict, val_metric = exp_selector(exp_str, seed=seed, task_std=task_std, y_snr=y_snr,
-                                               n_train_tasks=n_tasks, n_val_tasks=20, n_dims=n_dims,
+                                               n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
                                                val_perc=val_perc, w_bar=w_bar)
 
     params = {'exp_name': inner_exp_name, 'tasks_gen': tasks_gen, 'loss_class': loss_class, 'n_tasks': n_tasks,
@@ -408,7 +408,7 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
 
     loss_class, tasks_gen, inner_exp_name,\
         metric_dict, val_metric = exp_selector(exp_str, seed=seeds[0], task_std=task_std, y_snr=y_snr,
-                                               n_train_tasks=n_tasks, n_val_tasks=20, n_dims=n_dims,
+                                               n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
                                                val_perc=val_perc, w_bar=w_bar)
 
     exp_name = 'grid_search' + inner_exp_name + 'over' + str(len(seeds)) + 'seeds' + 'is' \
@@ -514,24 +514,24 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
                                  name=comb_key, show_plot=show_plot, y_label_add=y_label_add)
 
 
-def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-1, 6, num=10),
-                 gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
+                 gamma=None, n_processes=30, n_tasks=75, n_val_tasks=25, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     return exp_meta_val(exp_str='school', seed=seed, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
-                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 n_tasks_test=n_val_tasks, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 
 
 def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
-                 gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 gamma=None, n_processes=30, n_tasks=75, n_val_tasks=25, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     return exp_multi_seed(exp_str='school', seeds=seeds, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
-                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 n_tasks_test=n_val_tasks, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 
