@@ -29,7 +29,7 @@ class TasksGenerator:
 
         elif tasks_generation == 'expclass':
             self.rx = 1
-            self.y_dist = 'logistic'
+            self.y_dist = 'logisticmargin'
             self._task_gen_func = classification_tasks_generator
 
         np.random.seed(seed)
@@ -127,9 +127,10 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
             p_y_given_x = 1/(1 + np.exp(-clean_y_n/s))
             y_n[y_n_uniform > p_y_given_x] = -1
         elif y_dist == 'logisticmargin':
-            inside_margin = clean_y_n < 0.01
+            thold=0.5
+            inside_margin = np.abs(clean_y_n) < thold
             while any(inside_margin):
-                inside_margin = clean_y_n < 0.01
+                inside_margin = np.abs(clean_y_n) < thold
                 print('points inside margin {}'.format(np.count_nonzero(inside_margin.astype(int))))
                 xtmp = np.random.randn(n_train + n_test, n_dims)
                 xtmp = center + xtmp / norm(xtmp, axis=1, keepdims=True)
@@ -232,14 +233,15 @@ def threshold_for_classifcation(Y, th):
     return Y_bc
 
 
-def computer_data_gen(n_train_tasks=110, n_val_task=0, val_perc=0.5, threshold=5):
+def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5):
 
     temp = sio.loadmat('lenk_data.mat')
     train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (144 tasks of 20 elements)
-    test_data = temp['Testdata'] # 720x15 last feature is y (score from 0 to 10) (26 tasks of 20 elements)
+    test_data = temp['Testdata']  # 720x15 last feature is y (score from 0 to 10) (26 tasks of 20 elements)
 
     Y = train_data[:, 14]
     Y_test = test_data[:, 14]
+
     X = train_data[:, :14]
     X_test = test_data[:, :14]
 
@@ -250,40 +252,34 @@ def computer_data_gen(n_train_tasks=110, n_val_task=0, val_perc=0.5, threshold=5
     Y_test = threshold_for_classifcation(Y_test, threshold)
 
     n_tasks = 180
-    n_tasks_test = 45
-    ne = 16  # numer of elements per task
+    ne_tr = 16   # numer of elements on train set per task
+    ne_test = 4  # numer of elements on test set per task
 
     def split_tasks(data, number_of_tasks, number_of_elements):
         return [data[i * number_of_elements:(i + 1) * number_of_elements] for i in range(number_of_tasks)]
 
-    X = split_tasks(X, n_tasks, ne)
-    Y = split_tasks(Y, n_tasks, ne)
-    X_test = split_tasks(X_test, n_tasks_test, ne)
-    Y_test = split_tasks(Y_test, n_tasks_test, ne)
+    X = split_tasks(X, n_tasks, ne_tr)
+    Y = split_tasks(Y, n_tasks, ne_tr)
+
+    X_test = split_tasks(X_test, n_tasks, ne_test)
+    Y_test = split_tasks(Y_test, n_tasks, ne_test)
 
     task_shuffled = np.random.permutation(n_tasks)
 
     task_range_tr = task_shuffled[0:n_train_tasks]
-    task_range_val = task_shuffled[n_train_tasks:]
-    task_range_test = np.random.permutation(n_tasks_test)
+    task_range_val = task_shuffled[n_train_tasks:n_train_tasks+n_val_task]
+    task_range_test = task_shuffled[n_train_tasks+n_val_task:]
 
     data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
 
-    def fill_with_tasks(data, task_range, data_m, labels_m, test_perc=0.5):
+    def fill_with_tasks(data, task_range, data_m, labels_m, data_test_m, labels_test_m):
         for task_idx in task_range:
-            example_shuffled = np.random.permutation(len(data_m[task_idx]))
-            X, Y = data_m[task_idx][example_shuffled], labels_m[task_idx][example_shuffled]
-            if test_perc > 0.0:
-                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
-                Y_test = Y_test.ravel()
-                X_test = X_test
-            else:
-                X_train = X
-                Y_train = Y
-                X_test = []
-                Y_test = []
+            example_shuffled = np.random.permutation(len(labels_m[task_idx]))
+
+            X_train, Y_train = data_m[task_idx][example_shuffled], labels_m[task_idx][example_shuffled]
+            X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
 
             Y_train = Y_train.ravel()
             X_train = X_train
@@ -298,9 +294,9 @@ def computer_data_gen(n_train_tasks=110, n_val_task=0, val_perc=0.5, threshold=5
             data['Y_test'].append(Y_test)
 
     # make training, validation and test tasks:
-    fill_with_tasks(data_train, task_range_tr, X, Y, test_perc=0.0)
-    fill_with_tasks(data_val, task_range_val, X, Y, test_perc=val_perc)
-    fill_with_tasks(data_test, task_range_test, X_test, Y_test, test_perc=val_perc)
+    fill_with_tasks(data_train, task_range_tr, X, Y, X_test, Y_test)
+    fill_with_tasks(data_val, task_range_val, X, Y,  X_test, Y_test)
+    fill_with_tasks(data_test, task_range_test, X, Y, X_test, Y_test)
 
     return data_train, data_val, data_test
 
@@ -319,6 +315,20 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
     all_data = temp['X'][0]
     all_labels = temp['Y'][0]
+
+
+    #dataset downsampling to have same number of example for each class:
+    min_size = 100  # minsize is 22
+    for t in all_labels:
+        if min_size > len(t):
+            min_size = len(t)
+
+    for i in range(len(all_labels)):
+        example_shuffled = np.random.permutation(len(all_labels[i]))
+        all_labels[i] = all_labels[i][example_shuffled][:min_size]
+        all_data[i] = all_data[i][:, example_shuffled][:,:min_size]
+
+
 
     data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
@@ -362,4 +372,4 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 if __name__ == '__main__':
     #print(schools_data_gen())
     #print(computer_data_gen())
-    print(classification_tasks_generator())
+    classification_tasks_generator()

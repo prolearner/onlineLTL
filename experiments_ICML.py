@@ -47,7 +47,6 @@ def main():
 def exp_blank_ms():
     exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
 def lenk_one():
     lenk_meta_val(lambdas=0.01, alphas=10)
 
@@ -61,6 +60,7 @@ def exp1_len():
     lenk_multi_seed()
 
 
+
 def exp_reg_explore():
     exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
@@ -70,13 +70,13 @@ def exp_class():
     for tasks_std in [0.5, 1, 2, 4]:
         for n_train in [10, 50, 100]:
             exp_multi_seed('exp2', n_train=n_train, n_tasks=300, w_bar=4, y_snr=1, task_std=tasks_std,
-                            use_hyper_bounds=True, inner_solver_str=['ssubgd'], search_oracle=True)
+                            use_hyper_bounds=True, inner_solver_str=['ssubgd'], search_oracle=False)
 
 
 def exp_reg():
     for tasks_std in [0.5, 1, 2, 4]:
         for n_train in [10, 50, 100]:
-            for n_tasks in [200, 1000]:
+            for n_tasks in [1000]:
                 exp_multi_seed('exp1', n_train=n_train, n_tasks=n_tasks, w_bar=4, y_snr=1, task_std=tasks_std,
                                use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
@@ -122,8 +122,8 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
                                              seed=seed, n_train_tasks=n_train_tasks,
                                              n_val_tasks=n_val_tasks,
                                              val_perc=val_perc)
-        exp_name = 'expLenk' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks' + str(tasks_gen.n_tasks) \
-                   + 'dim' + str(tasks_gen.n_dims)
+        exp_name = 'expLenk' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
+                   + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {}
@@ -174,37 +174,16 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
     w_bar_mult = None
     if oracle_valid is not None:
         # Evaluate losses for the oracle meta model h = \bar{w}
-        max_iter_search = 1 if not search_oracle else 10
-        w_bar_mult = 1
-        step = 10
-        best_loss = np.Inf
-        best_m_oracle = None
-        best_w_mult = w_bar_mult
-        for i in range(max_iter_search):
-            inner_solver = inner_solver_test_class(lmbd_oracle, oracle_valid['w_bar']*w_bar_mult, loss_class, gamma=gamma)
-            m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
-                                      data_valid['X_test'], data_valid['Y_test'], inner_solver,
-                                      metric_dict=metric_dict, verbose=verbose)
-            current_loss = np.mean(m_oracle['loss'])
-            if current_loss < best_loss:
-                best_loss = current_loss
-                best_m_oracle = m_oracle
-                best_w_mult = w_bar_mult
-                w_bar_mult += step
-            else:
-                step = step/2
-                w_bar_mult -= step
-                step = step/2
+        inner_solver = inner_solver_test_class(lmbd_oracle, oracle_valid['w_bar'], loss_class, gamma=gamma)
+        m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
+                                  data_valid['X_test'], data_valid['Y_test'], inner_solver,
+                                  metric_dict=metric_dict, verbose=verbose)
 
-        m_oracle = best_m_oracle
-        w_bar_mult = best_w_mult
-        print('w_bar_mult', w_bar_mult)
-
-        inner_solvers = get_solvers([oracle_valid['W_true'][:, i]*w_bar_mult for i in range(len(data_valid['Y_test']))])
+        inner_solvers = get_solvers([oracle_valid['W_true'][:, i] for i in range(len(data_valid['Y_test']))])
         m_inner_oracle = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
                                              metric_dict=metric_dict, verbose=verbose)
 
-        inner_solvers = get_solvers([oracle_valid['w_bar']*w_bar_mult for _ in range(len(data_valid['Y_test']))])
+        inner_solvers = get_solvers([oracle_valid['w_bar'] for _ in range(len(data_valid['Y_test']))])
         m_wbar = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
                                      metric_dict=metric_dict, verbose=verbose)
 
@@ -245,7 +224,7 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
     return {'hs_dict': hs_dict, 'alpha': alpha, 'lmbd': lmbd, 'lmbd_itl': lmbd_itl,
             'lmbd_oracle': lmbd_oracle, 'm_itl': m_itl, 'm_oracle': m_oracle, 'm_ltl_dict': m_ltl_dict,
             'm-wbar-oracle': m_wbar, 'm-inner-oracle': m_inner_oracle,
-            'm-zero-losses': m_inner_initial, 'w_bar_mult': w_bar_mult}
+            'm-zero-losses': m_inner_initial, 'w_bar_mult': 1}
 
 
 def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alphas=np.logspace(-6, 3, num=10),
@@ -548,7 +527,7 @@ def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logsp
                  save_res=save_res, verbose=verbose)
 
 
-def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
+def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-1, 6, num=10),
                  gamma=None, n_processes=30, n_tasks=75, n_val_tasks=25, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
@@ -560,25 +539,27 @@ def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100)
 
 
 def lenk_meta_val(seed=0, lambdas=np.logspace(-2, 5, num=100), alphas=np.logspace(-4, 3, num=10),
-                 gamma=None, n_processes=30, n_tasks=100, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 gamma=None, n_processes=30, n_tasks=100, n_val_tasks=40, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     return exp_meta_val(exp_str='lenk', seed=seed, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
-                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 
 
-def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-1, 6, num=20), alphas=np.logspace(-1, 6, num=10),
-                 gamma=None, n_processes=30, n_tasks=100, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-1, 6, num=100), alphas=np.logspace(-1, 6, num=10),
+                 gamma=None, n_processes=30, n_tasks=100, n_val_tasks=40, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     return exp_multi_seed(exp_str='lenk', seeds=seeds, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
-                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
+
+
 
 ################### UTILS ###############################
 
