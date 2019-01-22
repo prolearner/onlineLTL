@@ -314,7 +314,7 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
         for task_idx in task_range:
             example_shuffled = np.random.permutation(len(all_labels[task_idx]))
-            X, Y = all_data[task_idx][example_shuffled].T, all_labels[task_idx][example_shuffled]
+            X, Y = all_data[task_idx].T[example_shuffled], all_labels[task_idx][example_shuffled]
             if test_perc > 0.0:
                 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
                 Y_test = Y_test.ravel()
