@@ -36,19 +36,22 @@ def main():
     #     use_hyper_bounds=False,
     #    inner_solver_test_str='ssubgd', show_plot=True)
 
-    #exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes, alphas=100, lambdas=0.01,
+    #exp_meta_val('exp1', seed=args.seed, n_processes=args.n_processes, alphas=K100, lambdas=0.01,
     #             n_tasks=10, n_train=10)
     #grid_search_variance('exp2', seed=args.seed, n_processes=args.n_processes)
     #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='ssubgd', alphas=[0.01, 0.1],
     #                lambdas=[10, 1])
     exp1_school()
 
+
 def exp1_school():
     school_meta_val()
 
+
 def exp_reg_explore():
-    exp_multi_seed('exp1', n_train=10, n_tasks=500, w_bar=4, y_snr=0.5, task_std=1,
+    exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
 
 def exp_class():
     for tasks_std in [0.5, 1, 2, 4]:
@@ -157,7 +160,7 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
         for i in range(max_iter_search):
             inner_solver = inner_solver_test_class(lmbd_oracle, oracle_valid['w_bar']*w_bar_mult, loss_class, gamma=gamma)
             _, m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
-                                           data_valid['X_test'], data_valid['Y_test'], inner_solver,
+                                         data_valid['X_test'], data_valid['Y_test'], inner_solver,
                                                      metric_dict=metric_dict, verbose=verbose)
             current_loss = np.mean(m_oracle['loss'])
             if current_loss < best_loss:
@@ -418,14 +421,28 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
     metrics = {'m_itl_dict': [], 'm_oracle_dict': [], 'm_ltl_dict': [], 'm_inner_oracle': [], 'm_wbar': [],
                'm_inner_initial': [], 'hs_dict': []}
 
-    def get_average(array_of_obj):
+    def concat(array_of_np_arrays):
+        return np.concatenate(array_of_np_arrays)
+
+    def means(array_of_np_arrays):
+        new_obj = []
+        for a in array_of_np_arrays:
+            new_obj.append(np.mean(a))
+        if len(new_obj) > 1:
+            return np.concatenate([np.expand_dims(o, 0) for o in new_obj])
+        else:
+            return new_obj[0]
+
+    comb_dict = {'sm': means, 's': concat}
+
+    def get_combination(array_of_obj, comb_f=means):
         new_obj = None
         obj = array_of_obj[0]
         if isinstance(obj, dict):
             new_obj = {}
             for k, v in obj.items():
                 if v is not None:
-                    new_obj[k] = get_average([a[k] for a in array_of_obj])
+                    new_obj[k] = get_combination([a[k] for a in array_of_obj], comb_f)
                 else:
                     new_obj[k] = None
 
@@ -433,22 +450,16 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
             new_obj = []
             for i, v in enumerate(obj):
                 if v is not None:
-                    new_obj[i] = get_average([a[i] for a in array_of_obj])
+                    new_obj[i] = get_combination([a[i] for a in array_of_obj], comb_f)
                 else:
                     new_obj[i] = None
         elif isinstance(obj, np.ndarray) and len(obj.shape) > 1:
             new_obj = []
             for i in range(obj.shape[0]):
-                new_obj.append(get_average([a[i] for a in array_of_obj]))
+                new_obj.append(get_combination([a[i] for a in array_of_obj], comb_f))
             new_obj = np.concatenate([np.expand_dims(o, 0) for o in new_obj])
         elif isinstance(obj, np.ndarray) and len(obj.shape) == 1:
-            if len(array_of_obj) > 1:
-                new_obj = []
-                for a in array_of_obj:
-                   new_obj.append(np.mean(a))
-                new_obj = np.concatenate([np.expand_dims(o, 0) for o in new_obj])
-            else:
-                new_obj = np.mean(obj)
+            new_obj = comb_f(array_of_obj)
 
         return new_obj
 
@@ -469,37 +480,38 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
 
         # compute average
         if i > 0:
-            avg_metrics = {}
-            for k, m in metrics.items():
-                    avg_metrics[k] = get_average(m)
+            for comb_key, comb_f in comb_dict.items():
+                avg_metrics = {}
+                for k, m in metrics.items():
+                        avg_metrics[k] = get_combination(m, comb_f=comb_f)
 
-            print(avg_metrics)
+                print(avg_metrics)
 
-            m_itl_dict = avg_metrics['m_itl_dict']
-            m_oracle_dict = avg_metrics['m_oracle_dict']
-            m_ltl_dict = avg_metrics['m_ltl_dict']
-            m_inner_oracle = avg_metrics['m_inner_oracle']
-            m_wbar = avg_metrics['m_wbar']
-            hs_dict = avg_metrics['hs_dict']
-            m_inner_initial = avg_metrics['m_inner_initial']
+                m_itl_dict = avg_metrics['m_itl_dict']
+                m_oracle_dict = avg_metrics['m_oracle_dict']
+                m_ltl_dict = avg_metrics['m_ltl_dict']
+                m_inner_oracle = avg_metrics['m_inner_oracle']
+                m_wbar = avg_metrics['m_wbar']
+                hs_dict = avg_metrics['hs_dict']
+                m_inner_initial = avg_metrics['m_inner_initial']
 
-            theory_str = 'th' if m_oracle_dict is not None else ''
-            y_label_add = '(mean and std over {} run)'.format(len(metrics['m_itl_dict']))
-            print_results(m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_initial)
-            plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
-                         name=theory_str, show_plot=show_plot, y_label_add=y_label_add)
-            save_results(exp_dir_path, exp_parameters, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle,
-                         m_inner_initial, m_wbar, hs_dict)
-
-            if m_oracle_dict is not None:
-                for mn in avg_metrics['m_itl_dict']:
-                    m_oracle_dict[mn].pop(theory_str, None)
-                    m_itl_dict[mn].pop(theory_str, None)
-                    for is_name in inner_solver_str:
-                        m_ltl_dict[mn].pop(is_name + '-' + theory_str, None)
-
+                theory_str = 'th' if m_oracle_dict is not None else ''
+                y_label_add = '(mean and std over {} run)'.format(len(metrics['m_itl_dict']))
+                print_results(m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_initial)
                 plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
-                             name='', show_plot=show_plot, y_label_add=y_label_add)
+                             name=comb_key+theory_str, show_plot=show_plot, y_label_add=y_label_add)
+                save_results(exp_dir_path, exp_parameters, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle,
+                             m_inner_initial, m_wbar, hs_dict, add_str=comb_key)
+
+                if m_oracle_dict is not None:
+                    for mn in avg_metrics['m_itl_dict']:
+                        m_oracle_dict[mn].pop(theory_str, None)
+                        m_itl_dict[mn].pop(theory_str, None)
+                        for is_name in inner_solver_str:
+                            m_ltl_dict[mn].pop(is_name + '-' + theory_str, None)
+
+                    plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
+                                 name=comb_key, show_plot=show_plot, y_label_add=y_label_add)
 
 
 def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-1, 6, num=10),
@@ -547,23 +559,24 @@ def print_results(m_ltl_dict, m_itl, m_oracle, m_inner_initial):
 
 
 def save_results(exp_dir_path, exp_parameters, m_ltl_dict, m_itl, m_oracle, m_inner_oracle, m_inner_initial,
-                 m_wbar, hs_dict):
+                 m_wbar, hs_dict, add_str=''):
     if exp_dir_path is None:
         return
 
+    add_str = add_str + '-'
     save_exp_parameters(exp_parameters, exp_dir_path)
-    save_nparray(hs_dict, 'hs', exp_dir_path)
+    save_nparray(hs_dict, add_str+'hs', exp_dir_path)
     for mn in m_itl:
         if m_wbar is not None:
-            np.savetxt(os.path.join(exp_dir_path, mn+"-wbar-oracle.csv"), m_wbar[mn], delimiter=",")
+            np.savetxt(os.path.join(exp_dir_path, add_str+mn+"-wbar-oracle.csv"), m_wbar[mn], delimiter=",")
         if m_inner_oracle is not None:
-            np.savetxt(os.path.join(exp_dir_path,mn+"-inner-oracle.csv"), m_inner_oracle[mn], delimiter=",")
+            np.savetxt(os.path.join(exp_dir_path,add_str+mn+"-inner-oracle.csv"), m_inner_oracle[mn], delimiter=",")
 
-        np.savetxt(os.path.join(exp_dir_path, mn+"-zero.csv"), m_inner_initial[mn], delimiter=",")
-        save_nparray(m_ltl_dict[mn], mn+'-ltl', exp_dir_path)
-        save_nparray(m_itl[mn], mn+'-itl', exp_dir_path)
+        np.savetxt(os.path.join(exp_dir_path, add_str+mn+"-zero.csv"), m_inner_initial[mn], delimiter=",")
+        save_nparray(m_ltl_dict[mn], add_str+mn+'-ltl', exp_dir_path)
+        save_nparray(m_itl[mn], add_str+mn+'-itl', exp_dir_path)
         if m_oracle is not None:
-            save_nparray(m_oracle[mn], mn+"-oracle", exp_dir_path)
+            save_nparray(m_oracle[mn], add_str+mn+"-oracle", exp_dir_path)
 
 
 def print_similarities(h, w_bar, t):
