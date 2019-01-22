@@ -99,7 +99,7 @@ def regression_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20,
 
 
 def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20, n_test=100, y_snr=5, task_std=1,
-                                   y_dist='logistic', w_bar=4):
+                                   y_dist='logisticmargin', w_bar=4):
     w_bar = w_bar * np.ones(n_dims) if type(w_bar) == int else w_bar
     W_true = np.zeros((n_dims, n_tasks))
     X_train, Y_train = [None] * n_tasks, [None] * n_tasks
@@ -121,6 +121,20 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         eps_n = np.random.randn(n_train + n_test) * std_eps
 
         if y_dist == 'logistic':
+            s = 1
+            y_n_uniform = np.random.rand(*clean_y_n.shape)
+            y_n = np.ones(clean_y_n.shape)
+            p_y_given_x = 1/(1 + np.exp(-clean_y_n/s))
+            y_n[y_n_uniform > p_y_given_x] = -1
+        elif y_dist == 'logisticmargin':
+            inside_margin = clean_y_n < 0.01
+            while any(inside_margin):
+                inside_margin = clean_y_n < 0.01
+                print('points inside margin {}'.format(np.count_nonzero(inside_margin.astype(int))))
+                xtmp = np.random.randn(n_train + n_test, n_dims)
+                xtmp = center + xtmp / norm(xtmp, axis=1, keepdims=True)
+                clean_y_n[inside_margin] = (xtmp @ w)[inside_margin]
+
             s = 1
             y_n_uniform = np.random.rand(*clean_y_n.shape)
             y_n = np.ones(clean_y_n.shape)
@@ -346,5 +360,6 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
 
 if __name__ == '__main__':
-    print(schools_data_gen())
-    print(computer_data_gen())
+    #print(schools_data_gen())
+    #print(computer_data_gen())
+    print(classification_tasks_generator())

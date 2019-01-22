@@ -41,7 +41,7 @@ def main():
     #grid_search_variance('exp2', seed=args.seed, n_processes=args.n_processes)
     #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='ssubgd', alphas=[0.01, 0.1],
     #                lambdas=[10, 1])
-    exp1_school()
+    exp1_len()
 
 
 def exp_blank_ms():
@@ -559,22 +559,22 @@ def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100)
                  save_res=save_res, verbose=verbose)
 
 
-def lenk_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
+def lenk_meta_val(seed=0, lambdas=np.logspace(-2, 5, num=100), alphas=np.logspace(-4, 3, num=10),
                  gamma=None, n_processes=30, n_tasks=100, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
-    return exp_meta_val(exp_str='school', seed=seed, lambdas=lambdas, alphas=alphas,
+    return exp_meta_val(exp_str='lenk', seed=seed, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
                  n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 
 
-def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-1, 6, num=10),
+def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-1, 6, num=20), alphas=np.logspace(-1, 6, num=10),
                  gamma=None, n_processes=30, n_tasks=100, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
-    return exp_multi_seed(exp_str='school', seeds=seeds, lambdas=lambdas, alphas=alphas,
+    return exp_multi_seed(exp_str='lenk', seeds=seeds, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
                  n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
