@@ -192,7 +192,6 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
     n_tasks_val = len(data_valid['X_train'])
 
     hs = np.zeros((n_tasks+1, dim))
-    losses_val = np.zeros((n_tasks+1, n_tasks_val))
     metric_results_dict = {'loss': np.zeros((n_tasks+1, n_tasks_val))}
     for metric_name in metric_dict:
         metric_results_dict[metric_name] = np.zeros((n_tasks+1, n_tasks_val))
@@ -206,7 +205,7 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
             inner_solver_test.init_from_solver(inner_solver)
             inner_solver_test.h = hs[:t+1].mean(axis=0)
 
-            losses_val[t], mr_dict = LTL_evaluation(X=data_valid['X_train'], y=data_valid['Y_train'],
+            mr_dict = LTL_evaluation(X=data_valid['X_train'], y=data_valid['Y_train'],
                                            X_test=data_valid['X_test'], y_test=data_valid['Y_test'],
                                            inner_solver=inner_solver_test, metric_dict=metric_dict, verbose=verbose)
             for metric_name, res in mr_dict.items():
@@ -216,7 +215,7 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
                 for metric_name, res in mr_dict.items():
                     print(str(t) + '-' + metric_name + '-val  : ', np.mean(res), np.std(res))
 
-    return hs, losses_val, metric_results_dict
+    return hs,  metric_results_dict
 
 
 def lmbd_theory(rx, L, sigma_h, n):
@@ -250,7 +249,7 @@ def no_train_evaluation(X_test, y_test, inner_solvers, metric_dict={}, verbose=0
                 print(metric_name + '-test', res[t])
 
     metric_results_dict['loss'] = losses
-    return losses, metric_results_dict
+    return metric_results_dict
 
 
 def LTL_evaluation(X, y, X_test, y_test, inner_solver, metric_dict={}, verbose=0):
@@ -280,7 +279,7 @@ def LTL_evaluation(X, y, X_test, y_test, inner_solver, metric_dict={}, verbose=0
 
             # print('accs-test', accs[t])
     metric_results_dict['loss'] = losses
-    return losses, metric_results_dict
+    return metric_results_dict
 
 
 # Tests

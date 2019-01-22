@@ -212,6 +212,15 @@ class RealDatasetGenerator:
         return self.gen_tasks(sel)
 
 
+def computer_data_gen():
+
+    #
+
+    temp = sio.loadmat('lenk_data.mat')
+    train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (16 profiles of 180 elements)
+    test_data = temp['Testdata'] # 720x15 last feature is y (score from 0 to 10) (4 profiles of 180 elements)
+
+
 def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
     n_tasks = 139
@@ -265,5 +274,4 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
 
 if __name__ == '__main__':
-    data = schools_data_gen()
-    print(data)
+    computer_data_gen()

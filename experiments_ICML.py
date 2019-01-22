@@ -43,9 +43,13 @@ def main():
     #                lambdas=[10, 1])
     exp1_school()
 
+def exp_blank_ms():
+    exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
+                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
 
 def exp1_school():
-    school_multi_seed()
+    school_multi_seed(seeds=range(30))
 
 
 def exp_reg_explore():
@@ -77,8 +81,8 @@ def exp_75():
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
 
-def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_dims=30,
-                 n_train_tasks=0, n_val_tasks=0):
+def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_dims=30,
+               n_train_tasks=0, n_val_tasks=0):
     if exp_str == 'exp1':
         tasks_gen = gen.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc, n_dims=n_dims,
                                        tasks_generation='exp1', w_bar=w_bar)
@@ -145,9 +149,9 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
 
     # Get eval loss for w = 0, w = w_\mu, w = \bar{w}
     inner_solvers = get_solvers([np.zeros(tasks_gen.n_dims) for _ in range(len(data_valid['Y_test']))])
-    _, m_inner_initial = no_train_evaluation(data_valid['X_test'],
-                                                              data_valid['Y_test'], inner_solvers,
-                                                              metric_dict=metric_dict, verbose=verbose)
+    m_inner_initial = no_train_evaluation(data_valid['X_test'],
+                                          data_valid['Y_test'], inner_solvers,
+                                          metric_dict=metric_dict, verbose=verbose)
     w_bar_mult = None
     if oracle_valid is not None:
         # Evaluate losses for the oracle meta model h = \bar{w}
@@ -159,9 +163,9 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
         best_w_mult = w_bar_mult
         for i in range(max_iter_search):
             inner_solver = inner_solver_test_class(lmbd_oracle, oracle_valid['w_bar']*w_bar_mult, loss_class, gamma=gamma)
-            _, m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
-                                         data_valid['X_test'], data_valid['Y_test'], inner_solver,
-                                                     metric_dict=metric_dict, verbose=verbose)
+            m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
+                                      data_valid['X_test'], data_valid['Y_test'], inner_solver,
+                                      metric_dict=metric_dict, verbose=verbose)
             current_loss = np.mean(m_oracle['loss'])
             if current_loss < best_loss:
                 best_loss = current_loss
@@ -178,12 +182,12 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
         print('w_bar_mult', w_bar_mult)
 
         inner_solvers = get_solvers([oracle_valid['W_true'][:, i]*w_bar_mult for i in range(len(data_valid['Y_test']))])
-        _, m_inner_oracle = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
-                                                metric_dict=metric_dict, verbose=verbose)
+        m_inner_oracle = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
+                                             metric_dict=metric_dict, verbose=verbose)
 
         inner_solvers = get_solvers([oracle_valid['w_bar']*w_bar_mult for _ in range(len(data_valid['Y_test']))])
-        _, m_wbar = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
-                                                metric_dict=metric_dict, verbose=verbose)
+        m_wbar = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
+                                     metric_dict=metric_dict, verbose=verbose)
 
     else:
         m_inner_oracle, m_oracle, m_wbar = None, None, None
@@ -196,7 +200,7 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
     for is_str in inner_solver_str:
         inner_solver = inner_solver_selector(is_str)(lmbd, np.zeros(tasks_gen.n_dims), loss_class, gamma=gamma)
         inner_solver_test = inner_solver_test_class(lmbd, np.zeros(tasks_gen.n_dims), loss_class, gamma=gamma)
-        hs, _, m_ltl = meta_ssgd(alpha, data_train['X_train'], data_train['Y_train'], data_valid,
+        hs, m_ltl = meta_ssgd(alpha, data_train['X_train'], data_train['Y_train'], data_valid,
                                 inner_solver, inner_solver_test, metric_dict=metric_dict, eval_online=eval_online)
         hs_dict[is_str] = hs
         for mn, res in m_ltl.items():
@@ -204,7 +208,7 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
 
     # Evaluate losses for the itl case: starting from h = 0
     inner_solver = inner_solver_test_class(lmbd_itl, np.zeros(tasks_gen.n_dims), loss_class, gamma=gamma)
-    _, m_itl = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
+    m_itl = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
                                 data_valid['X_test'], data_valid['Y_test'], inner_solver,
                                        metric_dict=metric_dict, verbose=verbose)
     print('hs :', hs)
@@ -232,9 +236,9 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     loss_class, tasks_gen, inner_exp_name,\
-        metric_dict, val_metric = exp_selector(exp_str, seed=seed, task_std=task_std, y_snr=y_snr,
-                                               n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
-                                               val_perc=val_perc, w_bar=w_bar)
+        metric_dict, val_metric = select_exp(exp_str, seed=seed, task_std=task_std, y_snr=y_snr,
+                                             n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
+                                             val_perc=val_perc, w_bar=w_bar)
 
     params = {'exp_name': inner_exp_name, 'tasks_gen': tasks_gen, 'loss_class': loss_class, 'n_tasks': n_tasks,
               'n_train': n_train, 'alpha': alphas, 'lmbd': lambdas, 'gamma': gamma, 'n_tasks_test': n_tasks_test,
@@ -286,24 +290,24 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
         inner_solver = inner_solver_test_class(best_oracle['params']['lmbd'], oracle_test['w_bar']*w_mult, loss_class,
                                                gamma=best_oracle['params']['gamma'])
-        _, m_oracle = LTL_evaluation(data_test['X_train'], data_test['Y_train'],
+        m_oracle = LTL_evaluation(data_test['X_train'], data_test['Y_train'],
                                        data_test['X_test'], data_test['Y_test'], inner_solver,
                                                  metric_dict=metric_dict,
                                                  verbose=verbose)
         inner_solvers = get_solvers([oracle_test['W_true'][:, i]*w_mult for i in range(len(data_test['Y_test']))])
-        _, m_inner_oracle = no_train_evaluation(data_test['X_test'], data_test['Y_test'], inner_solvers,
+        m_inner_oracle = no_train_evaluation(data_test['X_test'], data_test['Y_test'], inner_solvers,
                                                    metric_dict=metric_dict,
                                                    verbose=verbose)
 
         inner_solvers = get_solvers([oracle_test['w_bar']*w_mult for _ in range(len(data_test['Y_test']))])
-        _, m_wbar = no_train_evaluation(data_test['X_test'], data_test['Y_test'], inner_solvers,
+        m_wbar = no_train_evaluation(data_test['X_test'], data_test['Y_test'], inner_solvers,
                                            metric_dict=metric_dict,
                                            verbose=verbose)
     else:
         m_oracle, m_wbar, m_inner_oracle, best_oracle = None, None, None, None
 
     inner_solvers = get_solvers([np.zeros(tasks_gen.n_dims) for _ in range(len(data_test['Y_test']))])
-    _, m_inner_initial = no_train_evaluation(data_test['X_test'], data_test['Y_test'],
+    m_inner_initial = no_train_evaluation(data_test['X_test'], data_test['Y_test'],
                                                               inner_solvers,
                                                               metric_dict=metric_dict,
                                                               verbose=verbose)
@@ -326,7 +330,7 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
             inner_solver = inner_solver_test_class(best_ltl['params']['lmbd'], hs[t], loss_class,
                                                    gamma=best_ltl['params']['gamma'])
 
-            _, m_ltl = LTL_evaluation(X=data_test['X_train'], y=data_test['Y_train'],
+            m_ltl = LTL_evaluation(X=data_test['X_train'], y=data_test['Y_train'],
                                            X_test=data_test['X_test'], y_test=data_test['Y_test'],
                                            metric_dict=metric_dict,
                                            inner_solver=inner_solver, verbose=verbose)
@@ -343,8 +347,8 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
     best_itl, _ = find_best_config(itl_metric, results)
     inner_solver = inner_solver_test_class(best_itl['params']['lmbd'], np.zeros(tasks_gen.n_dims), loss_class,
                                            gamma=best_itl['params']['gamma'])
-    losses_itl, m_itl = LTL_evaluation(data_test['X_train'], data_test['Y_train'],
-                                data_test['X_test'], data_test['Y_test'], inner_solver,
+    m_itl = LTL_evaluation(data_test['X_train'], data_test['Y_train'],
+                                       data_test['X_test'], data_test['Y_test'], inner_solver,
                                        metric_dict=metric_dict,
                                        verbose=verbose)
 
@@ -407,9 +411,9 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     loss_class, tasks_gen, inner_exp_name,\
-        metric_dict, val_metric = exp_selector(exp_str, seed=seeds[0], task_std=task_std, y_snr=y_snr,
-                                               n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
-                                               val_perc=val_perc, w_bar=w_bar)
+        metric_dict, val_metric = select_exp(exp_str, seed=seeds[0], task_std=task_std, y_snr=y_snr,
+                                             n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
+                                             val_perc=val_perc, w_bar=w_bar)
 
     exp_name = 'grid_search' + inner_exp_name + 'over' + str(len(seeds)) + 'seeds' + 'is' \
                + str(inner_solver_str) + 'ist' + inner_solver_test_str + 'n' + str(n_train) + 'val_perc' + str(val_perc)
