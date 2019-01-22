@@ -16,6 +16,8 @@ class TasksGenerator:
         self.y_snr = y_snr
         self.task_std = task_std
 
+        self.y_dist = None
+
         self.w_bar = w_bar*np.ones(n_dims) if type(w_bar) == int else w_bar
 
         if tasks_generation == 'exp1':
@@ -24,8 +26,10 @@ class TasksGenerator:
         elif tasks_generation == 'exp2':
             self.rx = 1
             self._task_gen_func = regression_tasks_generator_v2
+
         elif tasks_generation == 'expclass':
             self.rx = 1
+            self.y_dist = 'logistic'
             self._task_gen_func = classification_tasks_generator
 
         np.random.seed(seed)
@@ -46,8 +50,12 @@ class TasksGenerator:
         if n_test is None:
             n_test = self.n_test
 
-        return self._task_gen_func(n_tasks, self.val_perc, self.n_dims, n_train, n_test, y_snr, task_std,
-                                   w_bar=self.w_bar)
+        if self.y_dist is None:
+            return self._task_gen_func(n_tasks, self.val_perc, self.n_dims, n_train, n_test, y_snr, task_std,
+                                       w_bar=self.w_bar)
+        else:
+            return self._task_gen_func(n_tasks, self.val_perc, self.n_dims, n_train, n_test, y_snr, task_std,
+                                       w_bar=self.w_bar, y_dist=self.y_dist)
 
     def __call__(self, n_tasks=None, n_train=None, n_test=None, y_snr=None, task_std=None, **kwargs):
         return self.gen_tasks(n_tasks, n_train, n_test, y_snr, task_std)
@@ -91,7 +99,7 @@ def regression_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20,
 
 
 def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20, n_test=100, y_snr=5, task_std=1,
-                                   y_dist='nonoise', w_bar=4):
+                                   y_dist='logistic', w_bar=4):
     w_bar = w_bar * np.ones(n_dims) if type(w_bar) == int else w_bar
     W_true = np.zeros((n_dims, n_tasks))
     X_train, Y_train = [None] * n_tasks, [None] * n_tasks
@@ -115,9 +123,9 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         if y_dist == 'logistic':
             s = 1
             y_n_uniform = np.random.rand(*clean_y_n.shape)
-            y_n = np.zeros(clean_y_n.shape)
+            y_n = np.ones(clean_y_n.shape)
             p_y_given_x = 1/(1 + np.exp(-clean_y_n/s))
-            y_n[y_n_uniform > p_y_given_x] = 1
+            y_n[y_n_uniform > p_y_given_x] = -1
         elif y_dist == 'sign':
             y_n = np.sign(clean_y_n + eps_n)
         elif y_dist == 'nonoise':
@@ -130,7 +138,7 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         W_true[:, i] = w.ravel()
 
     data = {'X_train': X_train, 'Y_train': Y_train, 'X_val': X_val, 'Y_val': Y_val, 'X_test': X_test, 'Y_test': Y_test}
-    oracle = {'w_bar': 50*w_bar, 'W_true': 50*W_true}
+    oracle = {'w_bar': w_bar, 'W_true': W_true}
     return data, oracle
 
 

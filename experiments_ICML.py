@@ -41,16 +41,28 @@ def main():
     #grid_search_variance('exp2', seed=args.seed, n_processes=args.n_processes)
     #school_meta_val(seed=args.seed, n_processes=args.n_processes, inner_solver_test_str='ssubgd', alphas=[0.01, 0.1],
     #                lambdas=[10, 1])
-    exp_class()
+    exp1_school()
 
+def exp1_school():
+    school_meta_val()
+
+def exp_reg_explore():
+    exp_multi_seed('exp1', n_train=10, n_tasks=500, w_bar=4, y_snr=0.5, task_std=1,
+                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
 def exp_class():
-    exp_multi_seed('exp2', n_train=10, n_tasks=100, w_bar=4, y_snr=1, task_std=0.5,
-                  use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+    for tasks_std in [0.5, 1, 2, 4]:
+        for n_train in [10, 50, 100]:
+            exp_multi_seed('exp2', n_train=n_train, n_tasks=300, w_bar=4, y_snr=1, task_std=tasks_std,
+                            use_hyper_bounds=True, inner_solver_str=['ssubgd'], search_oracle=True)
+
 
 def exp_reg():
-    exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
-                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+    for tasks_std in [0.5, 1, 2, 4]:
+        for n_train in [10, 50, 100]:
+            for n_tasks in [200, 1000]:
+                exp_multi_seed('exp1', n_train=n_train, n_tasks=n_tasks, w_bar=4, y_snr=1, task_std=tasks_std,
+                               use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
 
 def exp_75():
@@ -60,6 +72,7 @@ def exp_75():
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
     exp_multi_seed('exp1', n_train=50, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
 
 def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_dims=30,
                  n_train_tasks=0, n_val_tasks=0):
@@ -75,7 +88,7 @@ def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n
         tasks_gen = gen.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc, n_dims=n_dims,
                                        tasks_generation='expclass', w_bar=w_bar)
         exp_name = exp_str + 'w_bar' + str(w_bar) + 'taskstd' + str(task_std) + 'y_snr' + str(y_snr) + \
-                   'dim' + str(n_dims)
+                   'dim' + str(n_dims) + 'y_dist' + str(tasks_gen.y_dist)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {}
@@ -86,8 +99,8 @@ def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n
         exp_name = 'expSchool' + 'n_tasks_val' + str(n_val_tasks) + 'n_tasks' + str(tasks_gen.n_tasks) \
                    + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss
-        val_metric = 'exp variance'
-        metric_dict = {'exp variance': explained_variance_score}
+        val_metric = 'neg exp variance'
+        metric_dict = {'neg exp variance': ne_exp_var}
     else:
         raise NotImplementedError('exp: {} not implemented'.format(exp_str))
 
@@ -95,7 +108,7 @@ def exp_selector(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n
 
 
 def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamma=None,
-        n_tasks=100, n_train=5, n_tasks_test=200, n_test=100, val_perc=0.0, show_plot=False,
+        n_tasks=100, n_train=5, n_tasks_test=200, n_test=100, val_perc=0.0, search_oracle=None, show_plot=False,
         inner_solver_str=('ssubgd', 'subgd'), inner_solver_test_str='ssubgd', metric_dict={}, exp_dir='',
         use_hyper_bounds=False, verbose=1, eval_online=True, save_res=False):
 
@@ -132,21 +145,43 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
     _, m_inner_initial = no_train_evaluation(data_valid['X_test'],
                                                               data_valid['Y_test'], inner_solvers,
                                                               metric_dict=metric_dict, verbose=verbose)
-
+    w_bar_mult = None
     if oracle_valid is not None:
-        inner_solvers = get_solvers([oracle_valid['W_true'][:, i] for i in range(len(data_valid['Y_test']))])
+        # Evaluate losses for the oracle meta model h = \bar{w}
+        max_iter_search = 1 if not search_oracle else 10
+        w_bar_mult = 1
+        step = 10
+        best_loss = np.Inf
+        best_m_oracle = None
+        best_w_mult = w_bar_mult
+        for i in range(max_iter_search):
+            inner_solver = inner_solver_test_class(lmbd_oracle, oracle_valid['w_bar']*w_bar_mult, loss_class, gamma=gamma)
+            _, m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
+                                           data_valid['X_test'], data_valid['Y_test'], inner_solver,
+                                                     metric_dict=metric_dict, verbose=verbose)
+            current_loss = np.mean(m_oracle['loss'])
+            if current_loss < best_loss:
+                best_loss = current_loss
+                best_m_oracle = m_oracle
+                best_w_mult = w_bar_mult
+                w_bar_mult += step
+            else:
+                step = step/2
+                w_bar_mult -= step
+                step = step/2
+
+        m_oracle = best_m_oracle
+        w_bar_mult = best_w_mult
+        print('w_bar_mult', w_bar_mult)
+
+        inner_solvers = get_solvers([oracle_valid['W_true'][:, i]*w_bar_mult for i in range(len(data_valid['Y_test']))])
         _, m_inner_oracle = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
                                                 metric_dict=metric_dict, verbose=verbose)
 
-        inner_solvers = get_solvers([oracle_valid['w_bar'] for _ in range(len(data_valid['Y_test']))])
+        inner_solvers = get_solvers([oracle_valid['w_bar']*w_bar_mult for _ in range(len(data_valid['Y_test']))])
         _, m_wbar = no_train_evaluation(data_valid['X_test'], data_valid['Y_test'], inner_solvers,
                                                 metric_dict=metric_dict, verbose=verbose)
 
-        # Evaluate losses for the oracle meta model h = \bar{w}
-        inner_solver = inner_solver_test_class(lmbd_oracle, oracle_valid['w_bar'], loss_class, gamma=gamma)
-        _, m_oracle = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'],
-                                       data_valid['X_test'], data_valid['Y_test'], inner_solver,
-                                                 metric_dict=metric_dict, verbose=verbose)
     else:
         m_inner_oracle, m_oracle, m_wbar = None, None, None
 
@@ -184,12 +219,13 @@ def exp(exp_name, tasks_gen, loss_class: Loss, alpha=0.1, lmbd=(0.01, 0.1), gamm
     return {'hs_dict': hs_dict, 'alpha': alpha, 'lmbd': lmbd, 'lmbd_itl': lmbd_itl,
             'lmbd_oracle': lmbd_oracle, 'm_itl': m_itl, 'm_oracle': m_oracle, 'm_ltl_dict': m_ltl_dict,
             'm-wbar-oracle': m_wbar, 'm-inner-oracle': m_inner_oracle,
-            'm-zero-losses': m_inner_initial}
+            'm-zero-losses': m_inner_initial, 'w_bar_mult': w_bar_mult}
 
 
 def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alphas=np.logspace(-6, 3, num=10),
                  gamma=None, n_processes=30, w_bar=4, y_snr=100, task_std=1, n_tasks=100, n_train=100, n_dims=30,
-                 n_tasks_test=200, n_test=100, val_perc=0.0, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 n_tasks_test=200, n_test=100, val_perc=0.0, w_bar_mult=None, search_oracle=False,
+                 exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     loss_class, tasks_gen, inner_exp_name,\
@@ -200,6 +236,7 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
     params = {'exp_name': inner_exp_name, 'tasks_gen': tasks_gen, 'loss_class': loss_class, 'n_tasks': n_tasks,
               'n_train': n_train, 'alpha': alphas, 'lmbd': lambdas, 'gamma': gamma, 'n_tasks_test': n_tasks_test,
               'n_test': n_test, 'val_perc': val_perc, 'inner_solver_str': inner_solver_str,
+              'search_oracle': search_oracle,
               'inner_solver_test_str': inner_solver_test_str, 'show_plot': show_plot,
               'metric_dict': metric_dict, 'exp_dir': exp_dir, 'verbose': verbose, 'save_res': save_res}
 
@@ -242,18 +279,20 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
         return [inner_solver_test_class(lmbd, h, loss_class, gamma=gamma) for h in h_list]
     if oracle_test is not None:
         best_oracle, _ = find_best_config(oracle_metric, results)
-        inner_solver = inner_solver_test_class(best_oracle['params']['lmbd'], oracle_test['w_bar'], loss_class,
+        w_mult = best_oracle['out']['w_bar_mult']
+
+        inner_solver = inner_solver_test_class(best_oracle['params']['lmbd'], oracle_test['w_bar']*w_mult, loss_class,
                                                gamma=best_oracle['params']['gamma'])
         _, m_oracle = LTL_evaluation(data_test['X_train'], data_test['Y_train'],
                                        data_test['X_test'], data_test['Y_test'], inner_solver,
                                                  metric_dict=metric_dict,
                                                  verbose=verbose)
-        inner_solvers = get_solvers([oracle_test['W_true'][:, i] for i in range(len(data_test['Y_test']))])
+        inner_solvers = get_solvers([oracle_test['W_true'][:, i]*w_mult for i in range(len(data_test['Y_test']))])
         _, m_inner_oracle = no_train_evaluation(data_test['X_test'], data_test['Y_test'], inner_solvers,
                                                    metric_dict=metric_dict,
                                                    verbose=verbose)
 
-        inner_solvers = get_solvers([oracle_test['w_bar'] for _ in range(len(data_test['Y_test']))])
+        inner_solvers = get_solvers([oracle_test['w_bar']*w_mult for _ in range(len(data_test['Y_test']))])
         _, m_wbar = no_train_evaluation(data_test['X_test'], data_test['Y_test'], inner_solvers,
                                            metric_dict=metric_dict,
                                            verbose=verbose)
@@ -360,7 +399,8 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
 def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6, 3, num=10), alphas=np.logspace(-6, 3, num=10),
                  gamma=None, n_processes=30, w_bar=4, y_snr=100, task_std=1, n_tasks=100, n_train=100, n_dims=30,
-                 n_tasks_test=200, n_test=100, val_perc=0.0, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 n_tasks_test=200, n_test=100, val_perc=0.0, search_oracle=False,
+                 exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
     loss_class, tasks_gen, inner_exp_name,\
@@ -417,7 +457,7 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
                          w_bar=w_bar, y_snr=y_snr, task_std=task_std, n_tasks=n_tasks, n_train=n_train, n_dims=n_dims,
                          n_tasks_test=n_tasks_test, n_test=n_test, val_perc=val_perc, exp_dir=exp_dir_path,
                          inner_solver_str=inner_solver_str, use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=
-                         inner_solver_test_str, show_plot=show_plot, save_res=save_res, verbose=verbose)
+                         inner_solver_test_str, search_oracle=search_oracle, show_plot=show_plot, save_res=save_res, verbose=verbose)
 
         metrics['m_itl_dict'].append(r['m_itl_dict'])
         metrics['m_oracle_dict'].append(r['m_oracle_dict'])
@@ -443,33 +483,26 @@ def exp_multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6
             hs_dict = avg_metrics['hs_dict']
             m_inner_initial = avg_metrics['m_inner_initial']
 
-            theory_str='th'
+            theory_str = 'th' if m_oracle_dict is not None else ''
+            y_label_add = '(mean and std over {} run)'.format(len(metrics['m_itl_dict']))
             print_results(m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_initial)
             plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
-                         name=theory_str, show_plot=show_plot)
+                         name=theory_str, show_plot=show_plot, y_label_add=y_label_add)
             save_results(exp_dir_path, exp_parameters, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle,
                          m_inner_initial, m_wbar, hs_dict)
 
-            for mn in avg_metrics['m_itl_dict']:
-                m_oracle_dict[mn].pop(theory_str, None)
-                m_itl_dict[mn].pop(theory_str, None)
-                for is_name in inner_solver_str:
-                    m_ltl_dict[mn].pop(is_name + '-' + theory_str, None)
+            if m_oracle_dict is not None:
+                for mn in avg_metrics['m_itl_dict']:
+                    m_oracle_dict[mn].pop(theory_str, None)
+                    m_itl_dict[mn].pop(theory_str, None)
+                    for is_name in inner_solver_str:
+                        m_ltl_dict[mn].pop(is_name + '-' + theory_str, None)
 
-            plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
-                         name='', show_plot=show_plot)
-
-
-def grid_search_variance(exp_str='exp2', seed=0, n_processes=10):
-    for w_bar in [16, 32, 4]:
-        for tasks_std in [1, 2, 4, 8]:
-            for n_train in [10, 100, 1000]:
-                exp_meta_val(exp_str=exp_str, seed=seed, n_train=n_train, task_std=tasks_std, y_snr=10,
-                             n_processes=n_processes, w_bar=w_bar, inner_solver_str=['ssubgd'],
-                             use_hyper_bounds=True, n_tasks=1000, show_plot=False)
+                plot_results(exp_dir_path, m_ltl_dict, m_itl_dict, m_oracle_dict, m_inner_oracle, m_inner_initial, m_wbar,
+                             name='', show_plot=show_plot, y_label_add=y_label_add)
 
 
-def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-4, 3, num=10),
+def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-1, 6, num=10),
                  gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
@@ -479,14 +512,25 @@ def school_meta_val(seed=0, lambdas=np.logspace(-3, 3, num=100), alphas=np.logsp
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 
+def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=100), alphas=np.logspace(-4, 3, num=10),
+                 gamma=None, n_processes=30, n_tasks=80, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
+                 use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
+
+    return exp_multi_seed(exp_str='school', seeds=seeds, lambdas=lambdas, alphas=alphas,
+                 gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=0, n_dims=0,
+                 n_tasks_test=0, n_test=0, val_perc=0.5, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
+                 save_res=save_res, verbose=verbose)
+
 ################### UTILS ###############################
 
 
 def plot_results(exp_dir_path, m_ltl_dict, m_itl, m_oracle, m_inner_oracle, m_inner_initial, m_wbar, name='',
+                 y_label_add=' (mean and std over test tasks)',
                  show_plot=False):
     for mn in m_itl:
         plot_2fig(m_ltl_dict[mn], m_itl[mn], dg(m_oracle, mn), dg(m_inner_initial, mn), dg(m_inner_oracle, mn),
-                  dg(m_wbar, mn), '', y_label='test ' + mn + ' (mean and std over test tasks)',
+                  dg(m_wbar, mn), '', y_label='test ' + mn + y_label_add,
                   title='', name=mn +name,
                   save_dir_path=exp_dir_path, show_plot=show_plot)
 
@@ -531,6 +575,10 @@ def dg(d, k): return None if d is None else d[k]
 
 def accuracy(y_true, y_pred):
     return accuracy_score(y_true.astype(int), y_pred.astype(int))
+
+
+def ne_exp_var(y_true, y_pred):
+    return - explained_variance_score(y_true, y_pred)
 
 
 
