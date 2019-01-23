@@ -29,7 +29,7 @@ class TasksGenerator:
 
         elif tasks_generation == 'expclass':
             self.rx = 1
-            self.y_dist = 'logisticmargin'
+            self.y_dist = 'nonoisemargin'
             self._task_gen_func = classification_tasks_generator
 
         np.random.seed(seed)
@@ -129,6 +129,7 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
                 xtmp = np.random.randn(n_train + n_test, n_dims)
                 xtmp = center + xtmp / norm(xtmp, axis=1, keepdims=True)
                 clean_y_n[inside_margin] = (xtmp @ w)[inside_margin]
+                X_n[inside_margin] = xtmp[inside_margin]
 
         if y_dist == 'logistic' or y_dist == 'logisticmargin':
             s = 1/10
@@ -144,9 +145,12 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         X_train_all, X_test[i], Y_train_all, Y_test[i] = train_test_split(X_n, y_n, test_size=n_test)
         X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
 
-        W_true[:, i] = w.ravel()
+        W_true[:, i] = w.ravel() * (1/thold)
 
-    w_bar = w_bar
+        # check hinge loss error
+        print('MAE oracle', np.mean(np.maximum(0, 1-y_n*(X_n @ W_true[:, i]))))
+
+    w_bar = w_bar * (1/thold)
 
     data = {'X_train': X_train, 'Y_train': Y_train, 'X_val': X_val, 'Y_val': Y_val, 'X_test': X_test, 'Y_test': Y_test}
     oracle = {'w_bar': w_bar, 'W_true': W_true}
@@ -395,6 +399,6 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
 
 if __name__ == '__main__':
-    print(schools_data_gen())
+    #print(schools_data_gen())
     #print(computer_data_gen())
-    #classification_tasks_generator()
+    classification_tasks_generator()
