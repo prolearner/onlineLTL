@@ -336,15 +336,23 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
         all_labels[i] = all_labels[i][example_shuffled][:min_size]
         all_data[i] = all_data[i][:, example_shuffled][:,:min_size]
 
-
     data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
 
-    def normalize_Y(Y):
-        miny = min(Y)
-        maxy = max(Y)
-        return (Y - miny) / (maxy - miny)
+    def normalize_Y(Y, maximum=None, minimum=None):
+        miny = minimum if minimum != None else np.min(Y)
+        maxy = maximum if maximum != None else np.max(Y)
+        return (Y - miny) / (maxy - miny), maxy, miny
+
+    def normalizeX_dimitris(X):
+        return X / norm(X, axis=1, keepdims=True)
+
+    def binarize(X):
+        mean = np.mean(X, axis=1)
+        X[X > mean] = 1
+        X[X <= mean] = 1
+        return
 
     def fill_with_tasks(data, task_range, test_perc=0.5):
 
@@ -353,8 +361,6 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
             X, Y = all_data[task_idx].T[example_shuffled], all_labels[task_idx][example_shuffled]
             if test_perc > 0.0:
                 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
-                Y_test = normalize_Y(Y_test)
-                Y_test = Y_test.ravel()
                 X_test = X_test / norm(X_test, axis=1, keepdims=True)
 
 
@@ -364,7 +370,11 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
                 X_test = []
                 Y_test = []
 
-            Y_test = normalize_Y(Y_test)
+            Y_train, maxy, miny = normalize_Y(Y_train)
+            if len(Y_test) > 0:
+                Y_test, _, _ = normalize_Y(Y_test, maxy, miny)
+                Y_test = Y_test.ravel()
+
             Y_train = Y_train.ravel()
             X_train = X_train / norm(X_train, axis=1, keepdims=True)
             X_val = []
@@ -386,6 +396,6 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
 
 if __name__ == '__main__':
-    #print(schools_data_gen())
+    print(schools_data_gen())
     #print(computer_data_gen())
-    classification_tasks_generator()
+    #classification_tasks_generator()

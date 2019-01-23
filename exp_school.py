@@ -5,4 +5,6 @@ def exp1_school():
     school_multi_seed(seeds=range(30))
 
 
-exp1_school()
+#exp1_school()
+
+school_multi_seed()

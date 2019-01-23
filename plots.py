@@ -1,12 +1,14 @@
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 import numpy as np
 import os
 
-from matplotlib2tikz import save as tikz_save
+#from matplotlib2tikz import save as tikz_save
+
+std_mult = 3
 
 
 def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL', linestyle='-', color=None):
@@ -24,7 +26,7 @@ def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL'
 
     plot_f(y_mean_ltl, label=label + use_valid_str, color=color, linestyle=linestyle)
 
-    plt.fill_between(x=x, y1=y_mean_ltl + y_std_ltl / 2, y2=y_mean_ltl - y_std_ltl / 2, color=color, alpha=alpha)
+    plt.fill_between(x=x, y1=y_mean_ltl + std_mult * y_std_ltl / 2, y2=y_mean_ltl - std_mult *y_std_ltl / 2, color=color, alpha=alpha)
 
     return x
 

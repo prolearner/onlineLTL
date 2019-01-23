@@ -315,7 +315,7 @@ def plot_2fig(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, 
               metric_wbar=None,
               use_valid_str='', y_label='', title='', save_dir_path=None, show_plot=True):
     plot(metric_ltl, metric_itl, metric_oracle, None, None, None,
-         use_valid_str, y_label, title, save_dir_path, show_plot, 'loss.png')
+         use_valid_str, y_label, title, save_dir_path, show_plot, 'lossT1000.png')
 
     plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial, metric_inner_oracle, metric_wbar,
          use_valid_str, y_label, title, save_dir_path, show_plot, 'loss_plus.png')
