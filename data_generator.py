@@ -99,13 +99,14 @@ def regression_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20,
 
 
 def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20, n_test=100, y_snr=5, task_std=1,
-                                   y_dist='logisticmargin', w_bar=4):
+                                   y_dist='nonoisemargin', w_bar=4):
     w_bar = w_bar * np.ones(n_dims) if type(w_bar) == int else w_bar
     W_true = np.zeros((n_dims, n_tasks))
     X_train, Y_train = [None] * n_tasks, [None] * n_tasks
     X_val, Y_val = [None] * n_tasks, [None] * n_tasks
     X_test, Y_test = [None] * n_tasks, [None] * n_tasks
 
+    thold = 0.5
     for i in range(n_tasks):
         center = 0
 
@@ -120,14 +121,7 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
         std_eps = np.sqrt(var_signal / y_snr)
         eps_n = np.random.randn(n_train + n_test) * std_eps
 
-        if y_dist == 'logistic':
-            s = 1
-            y_n_uniform = np.random.rand(*clean_y_n.shape)
-            y_n = np.ones(clean_y_n.shape)
-            p_y_given_x = 1/(1 + np.exp(-clean_y_n/s))
-            y_n[y_n_uniform > p_y_given_x] = -1
-        elif y_dist == 'logisticmargin':
-            thold=0.5
+        if 'margin' in y_dist:
             inside_margin = np.abs(clean_y_n) < thold
             while any(inside_margin):
                 inside_margin = np.abs(clean_y_n) < thold
@@ -136,21 +130,23 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
                 xtmp = center + xtmp / norm(xtmp, axis=1, keepdims=True)
                 clean_y_n[inside_margin] = (xtmp @ w)[inside_margin]
 
-            s = 1
+        if y_dist == 'logistic' or y_dist == 'logisticmargin':
+            s = 1/10
             y_n_uniform = np.random.rand(*clean_y_n.shape)
             y_n = np.ones(clean_y_n.shape)
             p_y_given_x = 1/(1 + np.exp(-clean_y_n/s))
             y_n[y_n_uniform > p_y_given_x] = -1
         elif y_dist == 'sign':
             y_n = np.sign(clean_y_n + eps_n)
-        elif y_dist == 'nonoise':
+        elif y_dist == 'nonoise' or y_dist == 'nonoisemargin':
             y_n = np.sign(clean_y_n)
-
 
         X_train_all, X_test[i], Y_train_all, Y_test[i] = train_test_split(X_n, y_n, test_size=n_test)
         X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
 
         W_true[:, i] = w.ravel()
+
+    w_bar = w_bar
 
     data = {'X_train': X_train, 'Y_train': Y_train, 'X_val': X_val, 'Y_val': Y_val, 'X_test': X_test, 'Y_test': Y_test}
     oracle = {'w_bar': w_bar, 'W_true': W_true}
@@ -242,6 +238,7 @@ def threshold_for_classifcation(Y, th):
 
 def computer_data_ge_reg(n_train_tasks=100, n_val_task=40, threshold=5):
     return computer_data_gen(n_train_tasks, n_val_task, cla=False)
+
 
 def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
 
@@ -340,10 +337,14 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
         all_data[i] = all_data[i][:, example_shuffled][:,:min_size]
 
 
-
     data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+
+    def normalize_Y(Y):
+        miny = min(Y)
+        maxy = max(Y)
+        return (Y - miny) / (maxy - miny)
 
     def fill_with_tasks(data, task_range, test_perc=0.5):
 
@@ -352,14 +353,18 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
             X, Y = all_data[task_idx].T[example_shuffled], all_labels[task_idx][example_shuffled]
             if test_perc > 0.0:
                 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
+                Y_test = normalize_Y(Y_test)
                 Y_test = Y_test.ravel()
                 X_test = X_test / norm(X_test, axis=1, keepdims=True)
+
+
             else:
                 X_train = X
                 Y_train = Y
                 X_test = []
                 Y_test = []
 
+            Y_test = normalize_Y(Y_test)
             Y_train = Y_train.ravel()
             X_train = X_train / norm(X_train, axis=1, keepdims=True)
             X_val = []

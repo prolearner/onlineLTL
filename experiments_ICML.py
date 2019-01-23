@@ -45,9 +45,11 @@ def main():
 
 def exp_blank_ms():
     exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
+
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 def lenk_one():
     lenk_meta_val(lambdas=0.01, alphas=10)
+
 
 def school_one():
     school_meta_val(lambdas=0.01, alphas=10)

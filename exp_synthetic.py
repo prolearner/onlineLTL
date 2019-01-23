@@ -1,4 +1,4 @@
-from experiments_ICML import exp_multi_seed
+from experiments_ICML import exp_multi_seed, exp_meta_val
 
 
 def exp_class():
@@ -17,5 +17,9 @@ def exp_reg():
                                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
 
-exp_reg()
-exp_class()
+#exp_reg()
+#exp_class()
+#exp_meta_val('exp2', n_train=10, n_tasks=600, w_bar=4, y_snr=1, task_std=1, lambdas=1, alphas=1, use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
+exp_meta_val('exp2', n_train=10, n_tasks=600, w_bar=4, y_snr=1, task_std=1, use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
