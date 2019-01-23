@@ -333,8 +333,8 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
     for i in range(len(all_labels)):
         example_shuffled = np.random.permutation(len(all_labels[i]))
-        all_labels[i] = all_labels[i][example_shuffled][:min_size]
-        all_data[i] = all_data[i][:, example_shuffled][:,:min_size]
+        all_labels[i] = all_labels[i][example_shuffled]
+        all_data[i] = all_data[i][:, example_shuffled]
 
     data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
     data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
@@ -345,14 +345,15 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
         maxy = maximum if maximum != None else np.max(Y)
         return (Y - miny) / (maxy - miny), maxy, miny
 
-    def normalizeX_dimitris(X):
-        return X / norm(X, axis=1, keepdims=True)
+    def normalizeX_dimitris(X, *args, **kwargs):
+        return X / norm(X, axis=1, keepdims=True), None, None
 
-    def binarize(X):
-        mean = np.mean(X, axis=1)
-        X[X > mean] = 1
-        X[X <= mean] = 1
-        return
+    def binarize(X, maximum=None, minimum=None):
+        minx = minimum if minimum is not None else np.min(X, axis=0)
+        maxx = maximum if maximum is not None else np.max(X, axis=0)
+        return 2*((X - minx) / ((maxx - minx) +1e-16)) -1, maxx, minx
+
+    normalize_X = binarize
 
     def fill_with_tasks(data, task_range, test_perc=0.5):
 
@@ -361,22 +362,20 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
             X, Y = all_data[task_idx].T[example_shuffled], all_labels[task_idx][example_shuffled]
             if test_perc > 0.0:
                 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=val_perc)
-                X_test = X_test / norm(X_test, axis=1, keepdims=True)
-
-
             else:
                 X_train = X
                 Y_train = Y
                 X_test = []
                 Y_test = []
 
+            X_train, maxx, maxy = normalize_X(X_train)
             Y_train, maxy, miny = normalize_Y(Y_train)
-            if len(Y_test) > 0:
+            Y_train = Y_train.ravel()
+            if len(X_test) > 0:
+                X_test, _, _, = normalize_X(X_train, maxx, maxy)
                 Y_test, _, _ = normalize_Y(Y_test, maxy, miny)
                 Y_test = Y_test.ravel()
 
-            Y_train = Y_train.ravel()
-            X_train = X_train / norm(X_train, axis=1, keepdims=True)
             X_val = []
             Y_val = []
 
