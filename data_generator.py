@@ -226,7 +226,7 @@ class RealDatasetGenerator:
 
         if n_train is not None:
             data['X_train'] = [t[0:n_train] for t in data['X_train']]
-            data['Y_train'] = [t[0:n_train] for t in data['X_train']]
+            data['Y_train'] = [t[0:n_train] for t in data['Y_train']]
 
         return data, None
 
