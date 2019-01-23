@@ -209,22 +209,29 @@ class RealDatasetGenerator:
 
         self.data_train, self.data_val, self.data_test = gen_f(n_train_tasks, n_val_tasks, val_perc)
 
+        self.n_train = None
         self.n_train_tasks = len(self.data_train['Y_train'])
         self.n_val_tasks = len(self.data_val['Y_train'])
         self.n_test_tasks = len(self.data_test['Y_train'])
         self.n_tasks = self.n_test_tasks + self.n_val_tasks + self.n_train_tasks
         self.n_dims = self.data_train['X_train'][0].shape[1]
 
-    def gen_tasks(self, sel='train', **kwargs):
+    def gen_tasks(self, sel='train', n_train=None, **kwargs):
         if sel == 'train':
-            return self.data_train, None
+            data = self.data_train
         if sel == 'val':
-            return self.data_val, None
+            data = self.data_val
         if sel == 'test':
-            return self.data_test, None
+            data = self.data_test
 
-    def __call__(self, sel='train', **kwargs):
-        return self.gen_tasks(sel)
+        if n_train is not None:
+            data['X_train'] = [t[0:n_train] for t in data['X_train']]
+            data['Y_train'] = [t[0:n_train] for t in data['X_train']]
+
+        return data, None
+
+    def __call__(self, **kwargs):
+        return self.gen_tasks(**kwargs)
 
 
 def threshold_for_classifcation(Y, th):
@@ -233,7 +240,10 @@ def threshold_for_classifcation(Y, th):
     return Y_bc
 
 
-def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5):
+def computer_data_ge_reg(n_train_tasks=100, n_val_task=40, threshold=5):
+    return computer_data_gen(n_train_tasks, n_val_task, cla=False)
+
+def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
 
     temp = sio.loadmat('lenk_data.mat')
     train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (144 tasks of 20 elements)
@@ -248,8 +258,9 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5):
     print('Y median', np.mean(Y))
     print('Y mean', np.median(Y))
 
-    Y = threshold_for_classifcation(Y, threshold)
-    Y_test = threshold_for_classifcation(Y_test, threshold)
+    if cla:
+        Y = threshold_for_classifcation(Y, threshold)
+        Y_test = threshold_for_classifcation(Y_test, threshold)
 
     n_tasks = 180
     ne_tr = 16   # numer of elements on train set per task
