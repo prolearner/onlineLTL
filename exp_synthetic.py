@@ -21,5 +21,5 @@ def exp_reg():
 #exp_class()
 #exp_meta_val('exp2', n_train=10, n_tasks=600, w_bar=4, y_snr=1, task_std=1, lambdas=1, alphas=1, use_hyper_bounds=True, inner_solver_str=['ssubgd'])
 
-exp_multi_seed('exp2', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=1, use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
+for task_std in [4, 8, 12]:
+    exp_multi_seed('exp2', n_train=10, n_tasks=500, w_bar=4, y_snr=1, task_std=task_std, use_hyper_bounds=True, inner_solver_str=['ssubgd'])
