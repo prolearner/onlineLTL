@@ -10,7 +10,7 @@ parser.add_argument('--n-processes', type=int, default=30, metavar='N',
 
 
 args = parser.parse_args()
-n_processes = parser.n_processes()
+n_processes = args.n_processes
 
 
 def exp_len():
