@@ -6,5 +6,4 @@ def exp1_school():
 
 
 #exp1_school()
-
 school_multi_seed()

@@ -16,8 +16,7 @@ import os
 parser = argparse.ArgumentParser(description='LTL online numpy experiments')
 parser.add_argument('--seed', type=int, default=0, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--n-processes', type=int, default=30, metavar='N',
-                    help='n processes for grid search (default: 30)')
+parser.add_argument('--n-processes', type=int, default=30, metavar='N', help='n processes for grid search (default: 30)')
 
 
 EXP_FOLDER = 'exps'
@@ -45,8 +44,9 @@ def main():
 
 def exp_blank_ms():
     exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
-
                    use_hyper_bounds=True, inner_solver_str=['ssubgd'])
+
+
 def lenk_one():
     lenk_meta_val(lambdas=0.01, alphas=10)
 
@@ -563,8 +563,6 @@ def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-1, 6, num=100), 
                  n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
-
-
 
 ################### UTILS ###############################
 

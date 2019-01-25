@@ -29,7 +29,7 @@ class TasksGenerator:
 
         elif tasks_generation == 'expclass':
             self.rx = 1
-            self.y_dist = 'nonoisemargin'
+            self.y_dist = 'logisticmargin'
             self._task_gen_func = classification_tasks_generator
 
         np.random.seed(seed)
@@ -244,6 +244,7 @@ def computer_data_ge_reg(n_train_tasks=100, n_val_task=40, threshold=5):
     return computer_data_gen(n_train_tasks, n_val_task, cla=False)
 
 
+
 def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
 
     temp = sio.loadmat('lenk_data.mat')
@@ -253,11 +254,15 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     Y = train_data[:, 14]
     Y_test = test_data[:, 14]
 
-    X = train_data[:, :14]
-    X_test = test_data[:, :14]
+    # with price it's too simple
+    X = train_data[:,1:14]
+    X_test = test_data[:,1:14]
 
     print('Y median', np.mean(Y))
     print('Y mean', np.median(Y))
+
+    for i in range(len(X_test) -4):
+        print(np.max(np.abs(test_data[i, :14] - test_data[i+4, :14])))
 
     if cla:
         Y = threshold_for_classifcation(Y, threshold)
@@ -267,8 +272,8 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     ne_tr = 16   # numer of elements on train set per task
     ne_test = 4  # numer of elements on test set per task
 
-    def split_tasks(data, number_of_tasks, number_of_elements):
-        return [data[i * number_of_elements:(i + 1) * number_of_elements] for i in range(number_of_tasks)]
+    def split_tasks(data, nt, number_of_elements):
+        return [data[i * number_of_elements:(i + 1) * number_of_elements] for i in range(nt)]
 
     X = split_tasks(X, n_tasks, ne_tr)
     Y = split_tasks(Y, n_tasks, ne_tr)
@@ -290,7 +295,7 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
         for task_idx in task_range:
             example_shuffled = np.random.permutation(len(labels_m[task_idx]))
 
-            X_train, Y_train = data_m[task_idx][example_shuffled], labels_m[task_idx][example_shuffled]
+            X_train, Y_train = data_m[task_idx], labels_m[task_idx]
             X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
 
             Y_train = Y_train.ravel()
@@ -400,5 +405,5 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
 if __name__ == '__main__':
     #print(schools_data_gen())
-    #print(computer_data_gen())
-    classification_tasks_generator()
+    print(computer_data_gen())
+    #classification_tasks_generator()

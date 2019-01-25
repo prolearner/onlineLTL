@@ -208,12 +208,14 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
             mr_dict = LTL_evaluation(X=data_valid['X_train'], y=data_valid['Y_train'],
                                            X_test=data_valid['X_test'], y_test=data_valid['Y_test'],
                                            inner_solver=inner_solver_test, metric_dict=metric_dict, verbose=verbose)
+
             for metric_name, res in mr_dict.items():
                 metric_results_dict[metric_name][t] = res
 
             if verbose > PrintLevels.outer_eval:
                 for metric_name, res in mr_dict.items():
                     print(str(t) + '-' + metric_name + '-val  : ', np.mean(res), np.std(res))
+
 
     return hs,  metric_results_dict
 
@@ -260,6 +262,7 @@ def LTL_evaluation(X, y, X_test, y_test, inner_solver, metric_dict={}, verbose=0
     for metric_name in metric_dict:
         metric_results_dict[metric_name] = np.zeros(n_tasks)
 
+    ws = []
     #accs = np.zeros(n_tasks)
     for t in range(n_tasks):
         inner_solver(X_n=X[t], y_n=y[t], verbose=verbose)
@@ -270,7 +273,7 @@ def LTL_evaluation(X, y, X_test, y_test, inner_solver, metric_dict={}, verbose=0
             metric_results_dict[metric_name][t] = metric_f(y_test[t], inner_solver.predict(X_test[t]))
 
         # accs[t] = np.mean(np.maximum(np.sign(inner_solver.predict(X_test[t])*y_test[t]), 0))
-
+        ws.append(inner_solver.w)
         if verbose > PrintLevels.inner_eval:
             print('loss-test', losses[t])
             for metric_name, res in metric_results_dict.items():
