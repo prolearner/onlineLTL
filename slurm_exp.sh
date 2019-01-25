@@ -6,7 +6,7 @@
 ####SBATCH --exclusive
 #SBATCH --gres=gpu:gtx1080:1
 #####SBATCH --chdir=/home/$USER/qjobs
-#SBATCH --output=cluster_cifar-%j.qout
+#SBATCH --output==exp_lenk-%j.qout
 
 
 module load cuda-9.0 python-36
