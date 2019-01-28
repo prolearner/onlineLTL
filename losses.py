@@ -1,4 +1,6 @@
 import numpy as np
+import prox
+
 
 
 class Loss:
@@ -58,6 +60,9 @@ class HingeLoss(Loss):
 class AbsoluteLoss(Loss):
     L = 1
     name = 'Abs Loss'
+    prox_G = prox.prox_G(prox.prox_l_conj(prox.prox_abs))
+    #prox_G = prox.prox_G(prox.prox_abs_conj)
+
 
     @staticmethod
     def get(yhat, y):
@@ -76,7 +81,7 @@ class AbsoluteLoss(Loss):
         return res
 
     @staticmethod
-    def prox(u, y, gamma):
+    def prox2(u, y, gamma):
         n = y.shape[0]
         diff = n * u - y
 
@@ -84,3 +89,7 @@ class AbsoluteLoss(Loss):
         prox[diff < 0] = np.zeros(n)[diff < 0]
         prox[diff > 1 / (n * gamma)] = 1 / n
         return prox
+
+    @staticmethod
+    def prox(u, y, gamma):
+        return AbsoluteLoss.prox_G(u, y, gamma)

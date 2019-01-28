@@ -1,5 +1,5 @@
 import numpy as np
-import data_generator as gen
+from data import data_generator as gen
 from algorithms import meta_ssgd, LTL_evaluation, InnerSSubGD, InnerSubGD, no_train_evaluation, \
     FISTA
 from plots import plot

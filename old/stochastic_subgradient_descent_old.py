@@ -1,5 +1,4 @@
 import numpy as np
-import data_generator as gen
 
 
 class InnerSolver:

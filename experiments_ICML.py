@@ -2,14 +2,15 @@ import argparse
 
 import numpy as np
 from numpy.linalg import  norm
-import data_generator as gen
+
+import data.data_load
+from data import data_generator as gen
 from algorithms import meta_ssgd, LTL_evaluation, no_train_evaluation, \
     lmbd_theory, lmbd_theory_meta, alpha_theory, inner_solver_selector
 from plots import plot_2fig
 from utils import print_metric_mean_and_std, save_nparray, make_exp_dir, save_exp_parameters
 from losses import HingeLoss, AbsoluteLoss, Loss
 from sklearn.metrics import explained_variance_score, accuracy_score
-import copy
 import os
 
 
@@ -103,29 +104,29 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
         val_metric = 'loss'
         metric_dict = {}
     elif exp_str == 'school':
-        tasks_gen = gen.RealDatasetGenerator(gen_f=gen.schools_data_gen, seed=seed, n_train_tasks=n_train_tasks,
-                                             n_val_tasks=n_val_tasks,
-                                             val_perc=val_perc)
+        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.schools_data_gen, seed=seed, n_train_tasks=n_train_tasks,
+                                                        n_val_tasks=n_val_tasks,
+                                                        val_perc=val_perc)
         exp_name = 'expSchool' + 'n_tasks_val' + str(n_val_tasks) + 'n_tasks' + str(tasks_gen.n_tasks) \
                    + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss
-        val_metric = 'neg exp variance'
-        metric_dict = {'neg exp variance': ne_exp_var}
+        val_metric = 'loss'
+        metric_dict = {'negexpvar': ne_exp_var}
     elif exp_str == 'lenk':
-        tasks_gen = gen.RealDatasetGenerator(gen_f=gen.computer_data_gen,
-                                             seed=seed, n_train_tasks=n_train_tasks,
-                                             n_val_tasks=n_val_tasks,
-                                             val_perc=val_perc)
+        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.computer_data_gen,
+                                                        seed=seed, n_train_tasks=n_train_tasks,
+                                                        n_val_tasks=n_val_tasks,
+                                                        val_perc=val_perc)
         exp_name = 'expLenk' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {}
     elif exp_str == 'lenkReg':
-        tasks_gen = gen.RealDatasetGenerator(gen_f=gen.computer_data_ge_reg,
-                                             seed=seed, n_train_tasks=n_train_tasks,
-                                             n_val_tasks=n_val_tasks,
-                                             val_perc=val_perc)
+        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.computer_data_ge_reg,
+                                                        seed=seed, n_train_tasks=n_train_tasks,
+                                                        n_val_tasks=n_val_tasks,
+                                                        val_perc=val_perc)
         exp_name = 'expLenkReg' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss
@@ -255,7 +256,7 @@ def exp_meta_val(exp_str='exp1', seed=0, lambdas=np.logspace(-6, 3, num=10), alp
 
     from grid_search import HyperList, par_grid_search, find_best_config
 
-    exp_name = 'grid_search' + inner_exp_name + 'seed' + str(seed) + 'is' \
+    exp_name = 'grid_search' + inner_exp_name + 'seed' + str(seed) + 'vm' + val_metric + 'is' \
                + str(inner_solver_str) + 'ist' + inner_solver_test_str + 'n' + str(n_train) + 'val_perc' + str(val_perc)
 
     exp_parameters = locals()

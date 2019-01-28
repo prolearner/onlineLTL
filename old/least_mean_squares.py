@@ -1,5 +1,4 @@
 import numpy as np
-import data_generator as gen
 
 
 def grad_outer_loss(alpha, lmbd, h, X_n, y_n, X_val, y_val):
