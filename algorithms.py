@@ -83,7 +83,7 @@ class ISTA(InnerSolver):
             if verbose > PrintLevels.inner_train:
                 self.v_mean = self.v[:k].mean(axis=0)
                 self.w = self.v_mean + self.h
-                print('grad', grad)
+                #print('grad', grad)
                 print('dual train loss iter   %d: %f' % (k, self.train_loss_dual(X_n, y_n, k)))
                 print('primal train loss iter %d: %f' % (k, self.train_loss(X_n, y_n, k)))
 
@@ -322,24 +322,26 @@ def save_3d_csv(path, arr3d: np.ndarray, hyper_str=None):
 
 # Tests
 
-def t_inner_algo(inner_solver_class=(ISTA, InnerSubGD), seed=1, n_iter=1000):
+def t_inner_algo(inner_solver_class=(FISTA, ISTA, InnerSubGD), seed=1, n_iter=1000):
     from data.data_generator import TasksGenerator
     from losses import AbsoluteLoss
 
     n_dims = 30
     y_snr = 1000000000000
 
-    tasks_gen = TasksGenerator(seed=seed, val_perc=0.0, n_dims=n_dims, n_train=100, y_snr=y_snr, tasks_generation='exp1',
+    n_train = 100
+    tasks_gen = TasksGenerator(seed=seed, val_perc=0.0, n_dims=n_dims, n_train=n_train, y_snr=y_snr, tasks_generation='expclass',
                                task_std=0, w_bar=1)
 
-    data_train, oracle_train = tasks_gen(n_tasks=1, n_train=100)
+    data_train, oracle_train = tasks_gen(n_tasks=10, n_train=n_train)
 
     import copy
     w_dict = {}
     losses_dict = {}
-    X_train, Y_train = data_train['X_train'][0], data_train['Y_train'][0]
+    task_n = 1
+    X_train, Y_train = data_train['X_train'][task_n], data_train['Y_train'][task_n]
     x_cp, Y_cp = copy.copy(X_train), copy.copy(Y_train)
-    X_test, Y_test = data_train['X_test'][0], data_train['Y_test'][0]
+    X_test, Y_test = data_train['X_test'][task_n], data_train['Y_test'][task_n]
     for isc in inner_solver_class:
         inner_solver = isc(lmbd=0.01, h=np.zeros(n_dims), loss_class=AbsoluteLoss, gamma=None)
         inner_solver(X_train, Y_train, n_iter=n_iter,  verbose=4)
@@ -349,8 +351,7 @@ def t_inner_algo(inner_solver_class=(ISTA, InnerSubGD), seed=1, n_iter=1000):
     print('ws', w_dict)
     print('losses', losses_dict)
 
-    print('ws distance', np.linalg.norm(w_dict[InnerSubGD]-w_dict[ISTA]))
-
+    print('ws distance', np.linalg.norm(w_dict[InnerSubGD]-w_dict[FISTA]))
 
 
 if __name__ == '__main__':

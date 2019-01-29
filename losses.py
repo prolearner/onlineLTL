@@ -2,7 +2,6 @@ import numpy as np
 import prox
 
 
-
 class Loss:
     L = None
     name = None
@@ -27,6 +26,8 @@ class Loss:
 class HingeLoss(Loss):
     L = 1
     name = 'Hinge Loss'
+    prox_G = prox.prox_G(prox.prox_l_conj(prox.prox_hinge))
+
 
     @staticmethod
     def get(yhat, y):
@@ -48,6 +49,10 @@ class HingeLoss(Loss):
 
     @staticmethod
     def prox(u, y, gamma):
+        return HingeLoss.prox_G(u, y, gamma)
+
+    @staticmethod
+    def prox2(u, y, gamma):
         n = y.shape[0]
         val = n * y * u
 
