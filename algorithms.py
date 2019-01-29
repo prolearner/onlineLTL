@@ -350,7 +350,6 @@ def t_inner_algo(inner_solver_class=(FISTA, ISTA, InnerSubGD), seed=1, n_iter=10
 
     print('ws', w_dict)
     print('losses', losses_dict)
-
     print('ws distance', np.linalg.norm(w_dict[InnerSubGD]-w_dict[FISTA]))
 
 
