@@ -68,8 +68,8 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     Y_test = test_data[:, 14]
 
     # with price it's too simple
-    X = train_data[:,1:14]
-    X_test = test_data[:,1:14]
+    X = train_data[:,:14]
+    X_test = test_data[:,:14]
 
     print('Y median', np.mean(Y))
     print('Y mean', np.median(Y))

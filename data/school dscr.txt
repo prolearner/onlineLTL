@@ -1,0 +1,37 @@
+school dataset:
+
+from http://www.jmlr.org/papers/volume4/bakker03a/bakker03a.pdf:
+a. This data set, made available by the Inner London Education Authority (ILEA), consists of examination records from
+139 secondary schools in years 1985, 1986 and 1987. It is a random 50% sample with
+15362 students. The data set has been used to study the effectiveness of schools. A file containing the database
+can be downloaded from the ‘Multilevel Page’ (http://multilevel.ioe.ac.uk/intro/datasets.html).
+See also Mortimore et al. (1988).
+
+Each task in this setting is to predict exam scores for students in one school, based on eight inputs. The
+first four inputs (year of the exam, gender, VR band and ethnic group) are student-dependent, the next four
+(percentage of students eligible for free school meals, percentage of students in VR band one, school gender
+(mixed or (fe)male only) and school denomination) are school-dependent. The categorical variables (year,
+ethnic group and school denomination) were split up in binary variables, one for each category, making a new
+total of 16 student-dependent inputs, and six school-dependent inputs. We scaled each covariate and output
+to have zero mean and unit variance. All performance measures are obtained after making 10 independent
+random splits of each school’s data (covariates and corresponding responses) into a ‘training set’ (containing
+on average 80 samples), used both for fitting the shared parameters and computing the MAP hidden-to-output
+weights, and a ‘test set’ (comprised of the remaining samples, 30 on average) for assessing the generalization
+performance.
+
+from http://ttic.uchicago.edu/~argyriou/papers/mtl_feat.pdf :
+
+. The input consists
+of the year of the examination (YR), 4 school-specific and 3 studentspecific attributes. Attributes which are constant in each school in a
+certain year are: percentage of students eligible for free school meals,
+percentage of students in VR band one (highest band in a verbal reasoning test), school gender (S.GN.) and school denomination (S.DN.).
+Student-specific attributes are: gender (GEN), VR band (can take the
+values 1,2 or 3) and ethnic group (ETH). Following [21], we replaced
+categorical attributes (that is, all attributes which are not percentages)
+with one binary variable for each possible attribute value. In total, we
+obtained 27 attributes. We also found that results were similar with
+and without a bias term.
+
+Explained variance is defined as one minus the mean squared test error over the
+total variance of the data (computed within each task) and indicates
+the percentage of variance explained by the prediction model

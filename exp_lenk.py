@@ -15,8 +15,8 @@ n_processes = args.n_processes
 
 def exp_len():
     for i in [16]:
-        lenk_multi_seed(n_train=i, n_processes=n_processes)
-        #lenk_multi_seed(reg=True, n_train=i)
+        #lenk_multi_seed(n_train=i, n_processes=n_processes)
+        lenk_multi_seed(reg=True, n_train=i, inner_solver_str=['ssubgd', 'subgd', 'ista', 'fista'], inner_solver_test_str='ssubgd')
 
 
 #lenk_meta_val(reg=False, lambdas=1.9, alphas=0.6, inner_solver_test_str='ssubgd', inner_solver_str=['ssubgd'])
