@@ -25,7 +25,7 @@ class Loss:
 
 class HingeLoss(Loss):
     L = 1
-    name = 'Hinge Loss'
+    name = 'Hinge'
     prox_G = prox.prox_G(prox.prox_l_conj(prox.prox_hinge))
 
 
@@ -64,7 +64,7 @@ class HingeLoss(Loss):
 
 class AbsoluteLoss(Loss):
     L = 1
-    name = 'Abs Loss'
+    name = 'Abs'
     prox_G = prox.prox_G(prox.prox_l_conj(prox.prox_abs))
     #prox_G = prox.prox_G(prox.prox_abs_conj)
 

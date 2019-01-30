@@ -1,7 +1,7 @@
 import numpy as np
 from data import data_generator as gen
 from least_mean_squares import least_mean_squares, LTL_evaluation, least_mean_squares_train_only
-from plots import plot
+from plotsf import plot
 from utils import print_metric_mean_and_std
 import datetime
 import os

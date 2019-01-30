@@ -2,7 +2,7 @@ import numpy as np
 from data import data_generator as gen
 from algorithms import meta_ssgd, LTL_evaluation, InnerSSubGD, InnerSubGD, no_train_evaluation, \
     FISTA
-from plots import plot
+from plotsf import plot
 from utils import print_metric_mean_and_std, is_jsonable
 import datetime
 from losses import hinge_loss, grad_hinge_loss, absolute_loss, grad_absolute_loss

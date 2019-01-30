@@ -43,48 +43,6 @@ def main():
     #                lambdas=[10, 1])
 
 
-def exp_blank_ms():
-    exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
-                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
-
-def lenk_one():
-    lenk_meta_val(lambdas=0.01, alphas=10)
-
-
-def school_one():
-    school_meta_val(lambdas=0.01, alphas=10)
-
-
-def exp_reg_explore():
-    exp_multi_seed('exp1', n_train=10, n_tasks=10, w_bar=4, y_snr=1, task_std=1,
-                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
-
-def exp_class():
-    for tasks_std in [0.5, 1, 2, 4]:
-        for n_train in [10, 50, 100]:
-            exp_multi_seed('exp2', n_train=n_train, n_tasks=300, w_bar=4, y_snr=1, task_std=tasks_std,
-                            use_hyper_bounds=True, inner_solver_str=['ssubgd'], search_oracle=False)
-
-
-def exp_reg():
-    for tasks_std in [0.5, 1, 2, 4]:
-        for n_train in [10, 50, 100]:
-            for n_tasks in [1000]:
-                exp_multi_seed('exp1', n_train=n_train, n_tasks=n_tasks, w_bar=4, y_snr=1, task_std=tasks_std,
-                               use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
-
-def exp_75():
-    exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
-                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-    exp_multi_seed('exp1', n_train=20, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
-                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-    exp_multi_seed('exp1', n_train=50, n_tasks=1000, w_bar=4, y_snr=1, task_std=1,
-                   use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
-
 def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_dims=30,
                n_train_tasks=0, n_val_tasks=0):
     if exp_str == 'exp1':

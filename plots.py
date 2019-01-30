@@ -24,14 +24,16 @@ def _plot_array(plot_f, metric, use_valid_str, alpha, x=None, label='online LTL'
     if x is None:
         x = range(len(y_mean_ltl))
 
-    plot_f(y_mean_ltl, label=label + use_valid_str, color=color, linestyle=linestyle)
+    if color is None:
+        color = np.random.rand(3, )
 
+    plot_f(y_mean_ltl, label=label + use_valid_str, color=color, linestyle=linestyle)
     plt.fill_between(x=x, y1=y_mean_ltl + std_mult * y_std_ltl / 2, y2=y_mean_ltl - std_mult *y_std_ltl / 2, color=color, alpha=alpha)
 
     return x
 
 
-def _plot_from_dict(plot_f, metric_dict, use_valid_str, alpha, x=None, label='online LTL', color='orange'):
+def _plot_from_dict(plot_f, metric_dict, use_valid_str, alpha, x=None, label='online LTL', color=None):
     line_styles = [':', '-.', '--', '-']
     for is_name, metric in metric_dict.items():
         if is_name != '':
@@ -77,10 +79,34 @@ def plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metri
     plt.close()
 
 
+def plot_resultsList(T, results_dict, y_label='', title='', save_dir_path=None, show_plot=True,
+                     filename='metric_test'):
+
+    alpha = 0.1
+    x = list(range(T))
+    for _, results in results_dict.items():
+        _plot(results.metrics, '', alpha, x=x, label=results.name)
+
+    plt.title(title)
+    plt.ylabel(y_label)
+    plt.xlabel('T')
+    plt.xlim(right=x[-1], left=x[0])
+    plt.legend()
+
+    if save_dir_path is not None:
+        pylab.savefig(os.path.join(save_dir_path, filename+'.png'))
+        #pylab.savefig(os.path.join(save_dir_path, filename+'.pgf'))
+        #tikz_save(os.path.join(save_dir_path, filename+'.txt'))
+    if show_plot:
+        plt.show()
+    plt.close()
+
+
 def plot_2fig(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metric_inner_oracle=None,
               metric_wbar=None, use_valid_str='', y_label='', title='', name='loss', save_dir_path=None, show_plot=True):
     plot(metric_ltl, metric_itl, metric_oracle, None, None, None,
          use_valid_str, y_label, title, save_dir_path, show_plot, name)
 
-    plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial, metric_inner_oracle, metric_wbar,
-         use_valid_str, y_label, title, save_dir_path, show_plot, name+'_plus')
+    if metric_inner_initial is not None or metric_inner_oracle is not None or metric_wbar is not None:
+        plot(metric_ltl, metric_itl, metric_oracle, metric_inner_initial, metric_inner_oracle, metric_wbar,
+             use_valid_str, y_label, title, save_dir_path, show_plot, name+'_plus')

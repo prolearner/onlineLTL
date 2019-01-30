@@ -5,6 +5,7 @@ from utils import PrintLevels
 
 
 class InnerSolver:
+    name = None
     def __init__(self, lmbd=0.0, h=0.0, loss_class:Loss=None, gamma=None):
         self.lmbd = lmbd
         self.h = h
@@ -65,6 +66,7 @@ class InnerSolver:
 
 
 class ISTA(InnerSolver):
+    name = 'ista'
     def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=1000, rx=1, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
@@ -105,7 +107,9 @@ class ISTA(InnerSolver):
 
 
 class FISTA(ISTA):
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=100, rx=1, **kwargs):
+    name = 'fista'
+
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=1000, rx=1, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
 
@@ -134,6 +138,7 @@ class FISTA(ISTA):
 
 
 class InnerSSubGD(InnerSolver):
+    name = 'ssubgd'
     def __call__(self, X_n, y_n, h=None, verbose=0, **kwargs):
         n = X_n.shape[0]
         dim = X_n.shape[1]
@@ -157,7 +162,9 @@ class InnerSSubGD(InnerSolver):
 
 
 class InnerSubGD(InnerSolver):
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=1000, **kwargs):
+    name = 'subgd'
+
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=100, **kwargs):
         dim = X_n.shape[1]
         self._init(n_iter, dim, h)
 
@@ -177,6 +184,36 @@ class InnerSubGD(InnerSolver):
         self.v_mean = self.v[:-1].mean(axis=0)
         self.w = self.v_mean + self.h
         return self.v
+
+
+inner_dict = {InnerSSubGD.name: InnerSSubGD, FISTA.name: FISTA, ISTA.name: ISTA, InnerSubGD.name: InnerSubGD}
+
+
+def inner_solver_selector(solver_str):
+    return inner_dict[solver_str]
+
+
+def eval_biases(data_valid, inner_solver_test_list, metric_dict, verbose=0):
+    T = len(inner_solver_test_list)  # T
+    n_tasks_val = len(data_valid['X_train'])
+
+    metric_results_dict = {'loss': np.zeros((T, n_tasks_val))}
+    for metric_name in metric_dict:
+        metric_results_dict[metric_name] = np.zeros((T, n_tasks_val))
+
+    for t in range(T):
+        mr_dict = LTL_evaluation(X=data_valid['X_train'], y=data_valid['Y_train'],
+                                 X_test=data_valid['X_test'], y_test=data_valid['Y_test'],
+                                 inner_solver=inner_solver_test_list[t], metric_dict=metric_dict, verbose=verbose)
+
+        for metric_name, res in mr_dict.items():
+            metric_results_dict[metric_name][t] = res
+
+        if verbose > PrintLevels.outer_eval:
+            for metric_name, res in mr_dict.items():
+                print(str(t) + '-' + metric_name + '-val  : ', np.mean(res), np.std(res))
+
+    return metric_results_dict
 
 
 def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_test: InnerSolver, metric_dict={},
@@ -277,19 +314,6 @@ def LTL_evaluation(X, y, X_test, y_test, inner_solver, metric_dict={}, verbose=0
             # print('accs-test', accs[t])
     metric_results_dict['loss'] = losses
     return metric_results_dict
-
-    
-def inner_solver_selector(solver_str):
-    if solver_str == 'subgd':
-        return InnerSubGD
-    elif solver_str == 'ssubgd':
-        return InnerSSubGD
-    elif solver_str == 'fista':
-        return FISTA
-    elif solver_str == 'ista':
-        return ISTA
-    else:
-        raise NotImplementedError('inner solver {} not found'.format(solver_str))
 
 
 def train_and_evaluate(inner_solvers, data_train, data_val, name='', verbose=0):
