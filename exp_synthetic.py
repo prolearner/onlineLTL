@@ -2,7 +2,7 @@ from experiments_ICML import exp_multi_seed, exp_meta_val
 
 
 for task_std in [1]:
-    exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=1, task_std=task_std, use_hyper_bounds=False,
+    exp_multi_seed('exp1', n_train=10, n_tasks=1000, w_bar=4, y_snr=10, task_std=task_std, use_hyper_bounds=False,
                    inner_solver_str=['ssubgd', 'subgd', 'ista', 'fista'], inner_solver_test_str='subgd')
 
 
