@@ -1,6 +1,5 @@
 import argparse
-from train import lenk_multi_seed
-
+from experiments import lenk_multi_seed
 
 parser = argparse.ArgumentParser(description='LTL online numpy experiments')
 parser.add_argument('--seed', type=int, default=0, metavar='S',

@@ -1,5 +1,4 @@
-from train import multi_seed
-
+from experiments import multi_seed
 
 for task_std in [1]:
     multi_seed('exp1', n_train=10, n_tasks=500, w_bar=4, y_snr=10, task_std=task_std, use_hyper_bounds=False,
