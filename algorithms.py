@@ -6,7 +6,7 @@ import numba
 
 
 class InnerSolver:
-    default_n_iter = 100
+    default_n_iter = 200
     name = None
     def __init__(self, lmbd=0.0, h=0.0, loss_class:Loss=None, gamma=None):
         self.lmbd = lmbd
