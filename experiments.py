@@ -10,6 +10,7 @@ from train import EXP_FOLDER, Results, val, meta_val
 from utils import make_exp_dir, save_exp_parameters
 from data import data_generator, data_load
 
+
 def exp(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10), alphas = np.logspace(-6, 3, num=10),
         gamma = None, n_processes = 30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
         n_tasks_test = 200, n_test = 100, val_perc = 0.0,
@@ -26,9 +27,10 @@ def exp(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10), alphas
 
     exp_parameters = locals()
     print('parameters ' + exp_name, exp_parameters)
+    n_tasks_val = n_tasks_test//2  # use half the tasks for testing for the validation (with synthetic datasets)
 
     data_train, oracle_train = tasks_gen(n_tasks=n_tasks, n_train=n_train, n_test=n_test, sel='train')
-    data_valid, oracle_valid = tasks_gen(n_tasks=n_tasks_test, n_train=n_train, n_test=n_test, sel='val')
+    data_valid, oracle_valid = tasks_gen(n_tasks=n_tasks_val, n_train=n_train, n_test=n_test, sel='val')
     data_test, oracle_test = tasks_gen(n_tasks=n_tasks_test, n_train=n_train, n_test=n_test, sel='test')
 
     exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_name))

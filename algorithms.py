@@ -2,6 +2,7 @@ import numpy as np
 
 from losses import Loss
 from utils import PrintLevels
+import numba
 
 
 class InnerSolver:
@@ -47,9 +48,11 @@ class InnerSolver:
         else:
             return np.mean(self.loss_f(np.dot(X, self.v[k] + self.h), y))
 
+    @numba.jit(nopython=True)
     def predict(self, X):
         return np.dot(X, self.w)
 
+    @numba.jit(nopython=True)
     def train_loss(self, X, y, k):
         return np.mean(self.loss_f(np.dot(X, self.v[k] + self.h), y)) + self.lmbd*0.5*np.linalg.norm(self.v[k])
 
@@ -68,6 +71,8 @@ class InnerSolver:
 
 class ISTA(InnerSolver):
     name = 'ista'
+
+    @numba.jit(nopython=True)
     def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, rx=1, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]

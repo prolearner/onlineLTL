@@ -1,4 +1,5 @@
 import numpy as np
+import numba
 
 
 def prox_l_conj(prox_l):
@@ -14,6 +15,24 @@ def prox_G(prox_l_conj):
     return fun
 
 
+def prox_G_numba(u, y, gamma, prox_l):
+    n = u.shape[0]
+    return u - gamma*prox_l(u/gamma, y, 1/(n*gamma))
+
+
+@numba.jit(nopython=True)
+def prox_G_abs_numba(u, y, gamma):
+    n = u.shape[0]
+    return u - gamma*prox_abs(u/gamma, y, 1/(n*gamma))
+
+
+@numba.jit(nopython=True)
+def prox_G_hinge_numba(u, y, gamma):
+    n = u.shape[0]
+    return u - gamma*prox_hinge(u/gamma, y, 1/(n*gamma))
+
+
+@numba.jit(nopython=True)
 def prox_abs(u, y, gamma):
     diff = u - y
 
@@ -23,6 +42,7 @@ def prox_abs(u, y, gamma):
     return prox
 
 
+@numba.jit(nopython=True)
 def prox_hinge(u, y, gamma):
     diff = u - 1/y
 
@@ -32,6 +52,7 @@ def prox_hinge(u, y, gamma):
     return prox
 
 
+@numba.jit(nopython=True)
 def prox_abs_conj(u, y, gamma):
     diff = u - y
 
