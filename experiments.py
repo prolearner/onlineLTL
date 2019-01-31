@@ -3,13 +3,12 @@ import os
 import numpy as np
 from sklearn.metrics import accuracy_score, explained_variance_score
 
-import data
 from algorithms import inner_solver_selector
 from losses import AbsoluteLoss, HingeLoss
 from plots import plot_resultsList
 from train import EXP_FOLDER, Results, val, meta_val
 from utils import make_exp_dir, save_exp_parameters
-
+from data import data_generator, data_load
 
 def exp(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10), alphas = np.logspace(-6, 3, num=10),
         gamma = None, n_processes = 30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
@@ -140,46 +139,46 @@ def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10),
 def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_dims=30,
                n_train_tasks=0, n_val_tasks=0):
     if exp_str == 'exp1':
-        tasks_gen = data.data_generator.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc, n_dims=n_dims,
-                                       tasks_generation='exp1', w_bar=w_bar)
+        tasks_gen = data_generator.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc, n_dims=n_dims,
+                                                                  tasks_generation='exp1', w_bar=w_bar)
         exp_name = exp_str + 'w_bar' + str(w_bar) + 'taskstd' + str(task_std) + 'y_snr' + str(y_snr) + \
                    'dim' + str(n_dims)
         loss = AbsoluteLoss
         metric_dict = {}
         val_metric = 'loss'
     elif exp_str == 'exp2':
-        tasks_gen = data.data_generator.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc, n_dims=n_dims,
-                                       tasks_generation='expclass', w_bar=w_bar)
+        tasks_gen = data_generator.TasksGenerator(seed=seed, task_std=task_std, y_snr=y_snr, val_perc=val_perc, n_dims=n_dims,
+                                                                  tasks_generation='expclass', w_bar=w_bar)
         exp_name = exp_str + 'w_bar' + str(w_bar) + 'taskstd' + str(task_std) + 'y_snr' + str(y_snr) + \
                    'dim' + str(n_dims) + 'y_dist' + str(tasks_gen.y_dist)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {}
     elif exp_str == 'school':
-        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.schools_data_gen, seed=seed,
-                                                        n_train_tasks=n_train_tasks,
-                                                        n_val_tasks=n_val_tasks,
-                                                        val_perc=val_perc)
+        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.schools_data_gen, seed=seed,
+                                                                   n_train_tasks=n_train_tasks,
+                                                                   n_val_tasks=n_val_tasks,
+                                                                   val_perc=val_perc)
         exp_name = 'expSchool' + 'n_tasks_val' + str(n_val_tasks) + 'n_tasks' + str(tasks_gen.n_tasks) \
                    + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss
         val_metric = 'loss'
         metric_dict = {'negexpvar': ne_exp_var}
     elif exp_str == 'lenk':
-        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.computer_data_gen,
-                                                        seed=seed, n_train_tasks=n_train_tasks,
-                                                        n_val_tasks=n_val_tasks,
-                                                        val_perc=val_perc)
+        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.computer_data_gen,
+                                                                   seed=seed, n_train_tasks=n_train_tasks,
+                                                                   n_val_tasks=n_val_tasks,
+                                                                   val_perc=val_perc)
         exp_name = 'expLenk' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {}
     elif exp_str == 'lenkReg':
-        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.computer_data_ge_reg,
-                                                        seed=seed, n_train_tasks=n_train_tasks,
-                                                        n_val_tasks=n_val_tasks,
-                                                        val_perc=val_perc)
+        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.computer_data_ge_reg,
+                                                                   seed=seed, n_train_tasks=n_train_tasks,
+                                                                   n_val_tasks=n_val_tasks,
+                                                                   val_perc=val_perc)
         exp_name = 'expLenkReg' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss

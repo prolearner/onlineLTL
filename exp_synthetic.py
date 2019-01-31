@@ -2,7 +2,7 @@ from experiments import multi_seed
 
 for task_std in [1]:
     multi_seed('exp1', n_train=10, n_tasks=500, w_bar=4, y_snr=10, task_std=task_std, use_hyper_bounds=False,
-                   inner_solver_str=['ssubgd', 'fista', 'subgd'], inner_solver_test_str=['ssubgd', 'fista', 'subgd'])
+                   inner_solver_str=['fista'], inner_solver_test_str=['fista'])
 
 
 def exp_class():

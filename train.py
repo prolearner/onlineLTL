@@ -2,7 +2,6 @@ import numpy as np
 import os
 
 from algorithms import no_train_evaluation, LTL_evaluation, meta_ssgd, eval_biases
-from experiments import lenk_multi_seed
 from grid_search import HyperList, par_grid_search, find_best_config
 from plots import plot
 from utils import save_nparray, make_exp_dir, print_metric_mean_and_std, save_exp_parameters

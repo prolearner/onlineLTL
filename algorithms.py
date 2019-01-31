@@ -5,6 +5,7 @@ from utils import PrintLevels
 
 
 class InnerSolver:
+    default_n_iter = 100
     name = None
     def __init__(self, lmbd=0.0, h=0.0, loss_class:Loss=None, gamma=None):
         self.lmbd = lmbd
@@ -67,7 +68,7 @@ class InnerSolver:
 
 class ISTA(InnerSolver):
     name = 'ista'
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=1000, rx=1, **kwargs):
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, rx=1, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
 
@@ -109,7 +110,7 @@ class ISTA(InnerSolver):
 class FISTA(ISTA):
     name = 'fista'
 
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=1000, rx=1, **kwargs):
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, rx=1, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
 
@@ -164,7 +165,7 @@ class InnerSSubGD(InnerSolver):
 class InnerSubGD(InnerSolver):
     name = 'subgd'
 
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=100, **kwargs):
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, **kwargs):
         dim = X_n.shape[1]
         self._init(n_iter, dim, h)
 

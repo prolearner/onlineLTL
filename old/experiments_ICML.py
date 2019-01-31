@@ -3,7 +3,6 @@ import argparse
 import numpy as np
 from numpy.linalg import  norm
 
-import data.data_load
 from data import data_generator as gen
 from algorithms import meta_ssgd, LTL_evaluation, no_train_evaluation, \
     lmbd_theory, lmbd_theory_meta, alpha_theory, inner_solver_selector
@@ -62,29 +61,29 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
         val_metric = 'loss'
         metric_dict = {}
     elif exp_str == 'school':
-        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.schools_data_gen, seed=seed, n_train_tasks=n_train_tasks,
-                                                        n_val_tasks=n_val_tasks,
-                                                        val_perc=val_perc)
+        tasks_gen = LTLOnlineGiulia.data_load.RealDatasetGenerator(gen_f=LTLOnlineGiulia.data_load.schools_data_gen, seed=seed, n_train_tasks=n_train_tasks,
+                                                                   n_val_tasks=n_val_tasks,
+                                                                   val_perc=val_perc)
         exp_name = 'expSchool' + 'n_tasks_val' + str(n_val_tasks) + 'n_tasks' + str(tasks_gen.n_tasks) \
                    + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss
         val_metric = 'loss'
         metric_dict = {'negexpvar': ne_exp_var}
     elif exp_str == 'lenk':
-        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.computer_data_gen,
-                                                        seed=seed, n_train_tasks=n_train_tasks,
-                                                        n_val_tasks=n_val_tasks,
-                                                        val_perc=val_perc)
+        tasks_gen = LTLOnlineGiulia.data_load.RealDatasetGenerator(gen_f=LTLOnlineGiulia.data_load.computer_data_gen,
+                                                                   seed=seed, n_train_tasks=n_train_tasks,
+                                                                   n_val_tasks=n_val_tasks,
+                                                                   val_perc=val_perc)
         exp_name = 'expLenk' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {}
     elif exp_str == 'lenkReg':
-        tasks_gen = data.data_load.RealDatasetGenerator(gen_f=data.data_load.computer_data_ge_reg,
-                                                        seed=seed, n_train_tasks=n_train_tasks,
-                                                        n_val_tasks=n_val_tasks,
-                                                        val_perc=val_perc)
+        tasks_gen = LTLOnlineGiulia.data_load.RealDatasetGenerator(gen_f=LTLOnlineGiulia.data_load.computer_data_ge_reg,
+                                                                   seed=seed, n_train_tasks=n_train_tasks,
+                                                                   n_val_tasks=n_val_tasks,
+                                                                   val_perc=val_perc)
         exp_name = 'expLenkReg' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = AbsoluteLoss
