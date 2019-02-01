@@ -24,7 +24,8 @@ class Results:
         self.name = name
         self.metrics = None
         self.hs = None
-        self.parameters= None
+        self.parameters = None
+        self.color = None
 
     def add_parameters(self, params):
         self.parameters = params

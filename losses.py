@@ -38,7 +38,7 @@ class HingeLoss(Loss):
     @staticmethod
     @numba.jit(nopython=True)
     def grad(yhat, y):
-        d = np.copy(-y)
+        d = -y
         d[1 <= yhat * y] = 0
         return d
 
