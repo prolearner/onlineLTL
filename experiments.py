@@ -11,8 +11,8 @@ from utils import make_exp_dir, save_exp_parameters
 from data import data_generator, data_load
 
 
-def exp_itl_only(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10),
-        gamma = None, n_processes = 30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
+def exp_itl_only(exp_str='exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10),
+        gamma = None, n_processes=30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
         n_tasks_test = 200, n_test = 100, val_perc = 0.0,
         exp_dir = EXP_FOLDER,
         inner_solver_test_str = ('ssubgd', 'fista'), show_plot=False, verbose =0):
@@ -52,8 +52,8 @@ def exp_itl_only(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10
     return res_dict
 
 
-def exp(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10), alphas = np.logspace(-6, 3, num=10),
-        gamma = None, n_processes = 30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
+def exp(exp_str = 'exp1', seed=0, lambdas = np.logspace(-6, 3, num=10), alphas = np.logspace(-6, 3, num=10),
+        gamma = None, n_processes = 30, w_bar = 4, y_snr=100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
         n_tasks_test = 200, n_test = 100, val_perc = 0.0,
         exp_dir = EXP_FOLDER, inner_solver_str = ('ssubgd', 'fista'),
         inner_solver_test_str = ('ssubgd', 'fista'), show_plot=False, verbose =0):
@@ -110,7 +110,7 @@ def exp(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10), alphas
                                metric_dict=metric_dict, results=results, n_processes=n_processes, verbose=verbose)
             res_dict[ltl_res.name] = ltl_res
 
-    plot_resultsList(n_tasks+1, res_dict, save_dir_path=exp_dir_path, show_plot=show_plot, filename='ltl_plots')
+    plot_resultsList(n_tasks+1, res_dict, save_dir_path=exp_dir_path, show_plot=show_plot, filename='plots')
     return res_dict
 
 

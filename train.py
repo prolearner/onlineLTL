@@ -34,7 +34,7 @@ class Results:
     def add_metrics(self, metric_dict, y_label='Test Error'):
         self.metrics = metric_dict
         for m_name, metric in metric_dict.items():
-            self._save_metric(metric_dict, m_name, y_label)
+            self._save_metric(metric, m_name, y_label)
 
     def add_hs(self, hs):
         self.hs = hs
@@ -102,7 +102,7 @@ def meta_train_eval(h0, alpha, lmbd, gamma, inner_solver_class, inner_solver_tes
     inner_solver = inner_solver_class(lmbd, h0, loss_class, gamma=gamma)
     inner_solver_test = inner_solver_test_class(lmbd, h0, loss_class, gamma=gamma)
     hs, metrics = meta_ssgd(alpha, data_train['X_train'], data_train['Y_train'], data_valid,
-                     inner_solver, inner_solver_test, metric_dict=metric_dict, eval_online=True, verbose=verbose)
+                            inner_solver, inner_solver_test, metric_dict=metric_dict, eval_online=True, verbose=verbose)
 
     if is_parallel and results.save_dir is not None:
         results = Results.get_from_results(results)

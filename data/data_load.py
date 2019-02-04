@@ -127,7 +127,7 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     return data_train, data_val, data_test
 
 
-def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=False, bias=True):
+def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=False, bias=False):
 
     n_tasks = 139
 
@@ -139,9 +139,12 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=
 
     temp = sio.loadmat('data/schoolData.mat')
 
-    all_data = temp['X'][0]
     if bias:
-        all_data = [np.ones_like(t) for t in all_data]
+        all_data = [np.ones((t.shape[0] + 1, t.shape[1])) for t in temp['X'][0]]
+        for i in range(len(all_data)):
+            all_data[i][1:] = temp['X'][0][i]
+    else:
+        all_data = temp['X'][0]
 
     all_labels = temp['Y'][0]
 
@@ -173,7 +176,12 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=
         return X, None, None
 
     def normalizeX_dimitris(X, *args, **kwargs):
-        return X / norm(X, axis=1, keepdims=True), None, None
+        if bias:
+            X_sub = np.ones_like(X)
+            X_sub[:, 1:] = X[:, 1:] / norm(X[:, 1:], axis=1, keepdims=True)
+            return X_sub, None, None
+        else:
+            return X / norm(X, axis=1, keepdims=True), None, None
 
     def binarize(X, maximum=None, minimum=None):
         minx = minimum if minimum is not None else np.min(X, axis=0)
@@ -241,5 +249,5 @@ def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
     0
 
 if __name__ == '__main__':
-    print(computer_data_gen())
-    #print(schools_data_gen())
+    #print(computer_data_gen())
+    print(schools_data_gen())
