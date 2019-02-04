@@ -216,7 +216,7 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
-        metric_dict = {}
+        metric_dict = {'accuracy': accuracy}
     elif exp_str == 'lenkReg':
         tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.computer_data_ge_reg,
                                                                    seed=seed, n_train_tasks=n_train_tasks,

@@ -22,6 +22,7 @@ def threshold_for_classifcation(Y, th):
     Y_bc[Y < th] = -1
     return Y_bc
 
+
 if cla:
     Y = threshold_for_classifcation(Y, 5)
     Y_test = threshold_for_classifcation(Y_test, 5)
@@ -32,6 +33,7 @@ X_test = test_data[:, :14]
 n_tasks = 180
 ne_tr = 16   # numer of elements on train set per task
 ne_test = 4  # numer of elements on test set per task
+
 
 def split_tasks(data, nt, number_of_elements):
     return [data[i * number_of_elements:(i + 1) * number_of_elements] for i in range(nt)]
@@ -56,7 +58,7 @@ for t in range(n_tasks):
     X_train, Y_train = data_m[t][:n_train], labels_m[t][:n_train]
     X_test, Y_test = data_test_m[t], labels_test_m[t]
 
-    solver = algs.InnerSSubGD(lmbd=0.1, h=np.zeros_like(X_train[0]), loss_class=losses.AbsoluteLoss)
+    solver = algs.InnerSSubGD(lmbd=0.46415888336127775, h=np.zeros_like(X_train[0]), loss_class=losses.AbsoluteLoss)
 
     solver(X_train, Y_train, verbose=0, n_iter=None)
 

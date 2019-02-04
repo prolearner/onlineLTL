@@ -127,7 +127,7 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     return data_train, data_val, data_test
 
 
-def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=False):
+def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=False, bias=True):
 
     n_tasks = 139
 
@@ -140,9 +140,12 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=
     temp = sio.loadmat('data/schoolData.mat')
 
     all_data = temp['X'][0]
+    if bias:
+        all_data = [np.ones_like(t) for t in all_data]
+
     all_labels = temp['Y'][0]
 
-    #dataset downsampling to have same number of example for each class:
+    # dataset downsampling to have same number of example for each class:
     min_size = 100  # minsize is 22
     for t in all_labels:
         if min_size > len(t):
