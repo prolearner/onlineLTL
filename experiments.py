@@ -11,6 +11,47 @@ from utils import make_exp_dir, save_exp_parameters
 from data import data_generator, data_load
 
 
+def exp_itl_only(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10),
+        gamma = None, n_processes = 30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
+        n_tasks_test = 200, n_test = 100, val_perc = 0.0,
+        exp_dir = EXP_FOLDER,
+        inner_solver_test_str = ('ssubgd', 'fista'), show_plot=False, verbose =0):
+
+    loss_class, tasks_gen, inner_exp_name,\
+        metric_dict, val_metric = select_exp(exp_str, seed=seed, task_std=task_std, y_snr=y_snr,
+                                             n_train_tasks=n_tasks, n_val_tasks=n_tasks_test, n_dims=n_dims,
+                                             val_perc=val_perc, w_bar=w_bar)
+
+    exp_name = 'grid_searchITL' + inner_exp_name + 'seed' + str(seed) + 'vm' + val_metric + 'is' \
+                + 'ist' + str(inner_solver_test_str) + 'n' + str(n_train) + 'val_perc' + str(val_perc)
+
+    exp_parameters = locals()
+    print('parameters ' + exp_name, exp_parameters)
+    n_tasks_val = n_tasks_test//2  # use half the tasks for testing for the validation (with synthetic datasets)
+
+    data_train, oracle_train = tasks_gen(n_tasks=n_tasks, n_train=n_train, n_test=n_test, sel='train')
+    data_valid, oracle_valid = tasks_gen(n_tasks=n_tasks_val, n_train=n_train, n_test=n_test, sel='val')
+    data_test, oracle_test = tasks_gen(n_tasks=n_tasks_test, n_train=n_train, n_test=n_test, sel='test')
+
+    exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_name))
+    save_exp_parameters(exp_parameters, exp_dir_path)
+
+    res_dict = {}
+    for ts in inner_solver_test_str:
+        inner_solver_test_class = inner_solver_selector(ts)
+
+        # metaval for ITL
+        results = Results(save_dir=exp_dir_path, do_plot=False, show_plot=show_plot, name='ITL-ts' + ts)
+        h = np.zeros(tasks_gen.n_dims)
+        itl_res = val(h, val_metric, lambdas, gamma, inner_solver_test_class, loss_class,
+                      data_valid, data_test, metric_dict, results, n_processes=n_processes, verbose=verbose)
+
+        res_dict[itl_res.name] = itl_res
+
+    plot_resultsList(n_tasks+1, res_dict, save_dir_path=exp_dir_path, show_plot=show_plot, filename='ltl_plots')
+    return res_dict
+
+
 def exp(exp_str = 'exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10), alphas = np.logspace(-6, 3, num=10),
         gamma = None, n_processes = 30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
         n_tasks_test = 200, n_test = 100, val_perc = 0.0,
@@ -115,7 +156,7 @@ def multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6, 3,
                          title=str(len(res_list))+' runs')
 
 
-def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-1, 6, num=100), alphas=np.logspace(-1, 6, num=10), reg=False,
+def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-3, 3, num=10), reg=False,
                  n_train=None,gamma=None, n_processes=30, n_tasks=100, n_val_tasks=40, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str=('ssubgd', 'fista'), show_plot=True, save_res=True, verbose=1):
 
@@ -155,7 +196,7 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
                    'dim' + str(n_dims) + 'y_dist' + str(tasks_gen.y_dist)
         loss = HingeLoss
         val_metric = 'loss'
-        metric_dict = {}
+        metric_dict = {'accuracy': accuracy}
     elif exp_str == 'school':
         tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.schools_data_gen, seed=seed,
                                                                    n_train_tasks=n_train_tasks,

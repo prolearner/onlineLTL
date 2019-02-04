@@ -8,6 +8,7 @@ import numba
 class InnerSolver:
     default_n_iter = 200
     name = None
+
     def __init__(self, lmbd=0.0, h=0.0, loss_class:Loss=None, gamma=None):
         self.lmbd = lmbd
         self.h = h
@@ -48,11 +49,9 @@ class InnerSolver:
         else:
             return np.mean(self.loss_f(np.dot(X, self.v[k] + self.h), y))
 
-    @numba.jit(nopython=True)
     def predict(self, X):
         return np.dot(X, self.w)
 
-    @numba.jit(nopython=True)
     def train_loss(self, X, y, k):
         return np.mean(self.loss_f(np.dot(X, self.v[k] + self.h), y)) + self.lmbd*0.5*np.linalg.norm(self.v[k])
 
@@ -72,7 +71,6 @@ class InnerSolver:
 class ISTA(InnerSolver):
     name = 'ista'
 
-    @numba.jit(nopython=True)
     def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, rx=1, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
@@ -91,6 +89,7 @@ class ISTA(InnerSolver):
             if verbose > PrintLevels.inner_train:
                 self.v_mean = self.v[:k].mean(axis=0)
                 self.w = self.v_mean + self.h
+
                 #print('grad', grad)
                 print('dual train loss iter   %d: %f' % (k, self.train_loss_dual(X_n, y_n, k)))
                 print('primal train loss iter %d: %f' % (k, self.train_loss(X_n, y_n, k)))
@@ -145,16 +144,19 @@ class FISTA(ISTA):
 
 class InnerSSubGD(InnerSolver):
     name = 'ssubgd'
-    def __call__(self, X_n, y_n, h=None, verbose=0, **kwargs):
+
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=None, **kwargs):
         n = X_n.shape[0]
+        n_iter = n if n_iter is None else n_iter
+        r_indices = np.random.randint(0, n, size=n_iter)
         dim = X_n.shape[1]
-        self._init(n, dim, h)
+        self._init(n_iter, dim, h)
 
         if verbose > PrintLevels.inner_train:
             print('--- start inner training')
 
-        for k in range(n):
-            x, y = X_n[k], y_n[k]
+        for k in range(n_iter):
+            x, y = X_n[r_indices[k]], y_n[r_indices[k]]
             gamma = 1 / ((k+1) * self.lmbd) if self.gamma is None else self.gamma  # step size
             self.v[k + 1] = self.v[k] - gamma*(self.grad_loss_f(np.dot(x, self.v[k] + self.h), y)*x + self.lmbd*self.v[k])
 
@@ -252,7 +254,6 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
             if verbose > PrintLevels.outer_eval:
                 for metric_name, res in mr_dict.items():
                     print(str(t) + '-' + metric_name + '-val  : ', np.mean(res), np.std(res))
-
 
     return hs,  metric_results_dict
 

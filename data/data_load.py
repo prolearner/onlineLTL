@@ -13,7 +13,7 @@ class RealDatasetGenerator:
 
         ntt = n_train_tasks if n_train_tasks + n_val_tasks <= 100 else 100 - n_val_tasks
 
-        self.data_train, self.data_val, self.data_test = gen_f(ntt, n_val_tasks, val_perc)
+        self.data_train, self.data_val, self.data_test = gen_f(ntt, n_val_tasks)
 
         self.n_train = None
         self.n_train_tasks = len(self.data_train['Y_train'])
@@ -35,12 +35,9 @@ class RealDatasetGenerator:
         if sel == 'test':
             data = self.data_test
 
-
-
         if n_train is not None:
             data['X_train'] = [t[0:n_train] for t in data['X_train']]
             data['Y_train'] = [t[0:n_train] for t in data['Y_train']]
-
 
         return data, None
 
@@ -67,15 +64,14 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     Y = train_data[:, 14]
     Y_test = test_data[:, 14]
 
-    # with price it's too simple
-    X = train_data[:,:14]
-    X_test = test_data[:,:14]
+    X = train_data[:, :14]
+    X_test = test_data[:, :14]
 
     print('Y median', np.mean(Y))
     print('Y mean', np.median(Y))
 
-    for i in range(len(X_test) -4):
-        print(np.max(np.abs(test_data[i, :14] - test_data[i+4, :14])))
+    # for i in range(len(X_test) -4):
+    #    print(np.max(np.abs(test_data[i, :14] - test_data[i+4, :14])))
 
     if cla:
         Y = threshold_for_classifcation(Y, threshold)
@@ -88,11 +84,11 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
     def split_tasks(data, nt, number_of_elements):
         return [data[i * number_of_elements:(i + 1) * number_of_elements] for i in range(nt)]
 
-    X = split_tasks(X, n_tasks, ne_tr)
-    Y = split_tasks(Y, n_tasks, ne_tr)
+    data_m = split_tasks(X, n_tasks, ne_tr)
+    labels_m = split_tasks(Y, n_tasks, ne_tr)
 
-    X_test = split_tasks(X_test, n_tasks, ne_test)
-    Y_test = split_tasks(Y_test, n_tasks, ne_test)
+    data_test_m = split_tasks(X_test, n_tasks, ne_test)
+    labels_test_m = split_tasks(Y_test, n_tasks, ne_test)
 
     task_shuffled = np.random.permutation(n_tasks)
 
@@ -106,9 +102,9 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
 
     def fill_with_tasks(data, task_range, data_m, labels_m, data_test_m, labels_test_m):
         for task_idx in task_range:
-            example_shuffled = np.random.permutation(len(labels_m[task_idx]))
+            es = np.random.permutation(len(labels_m[task_idx]))
 
-            X_train, Y_train = data_m[task_idx], labels_m[task_idx]
+            X_train, Y_train = data_m[task_idx][es], labels_m[task_idx][es]
             X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
 
             Y_train = Y_train.ravel()
@@ -124,9 +120,9 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
             data['Y_test'].append(Y_test)
 
     # make training, validation and test tasks:
-    fill_with_tasks(data_train, task_range_tr, X, Y, X_test, Y_test)
-    fill_with_tasks(data_val, task_range_val, X, Y,  X_test, Y_test)
-    fill_with_tasks(data_test, task_range_test, X, Y, X_test, Y_test)
+    fill_with_tasks(data_train, task_range_tr, data_m, labels_m, data_test_m, labels_test_m)
+    fill_with_tasks(data_val, task_range_val, data_m, labels_m,  data_test_m, labels_test_m)
+    fill_with_tasks(data_test, task_range_test, data_m, labels_m, data_test_m, labels_test_m)
 
     return data_train, data_val, data_test
 
@@ -241,8 +237,6 @@ def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
 
     0
 
-
-
 if __name__ == '__main__':
-    #print(computer_data_gen())
-    print(schools_data_gen())
+    print(computer_data_gen())
+    #print(schools_data_gen())

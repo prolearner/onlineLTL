@@ -1,8 +1,8 @@
 from experiments import multi_seed
 
 for task_std in [1]:
-    multi_seed('exp1', n_train=10, n_tasks=500, w_bar=4, y_snr=10, task_std=task_std, use_hyper_bounds=False,
-                   inner_solver_str=['fista'], inner_solver_test_str=['fista'])
+    multi_seed('exp1', n_train=10, n_tasks=3, w_bar=4, y_snr=10, task_std=task_std, use_hyper_bounds=False,
+                   inner_solver_str=['fista'], inner_solver_test_str=['fista'], n_processes=10)
 
 
 def exp_class():
@@ -23,5 +23,3 @@ def exp_reg():
 #exp_reg()
 #exp_class()
 #exp_meta_val('exp2', n_train=10, n_tasks=600, w_bar=4, y_snr=1, task_std=1, lambdas=1, alphas=1, use_hyper_bounds=True, inner_solver_str=['ssubgd'])
-
-

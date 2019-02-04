@@ -86,7 +86,7 @@ def eval_bias(h, lmbd, gamma, inner_solver_test_class, loss_class, data_valid, m
               verbose=1, is_parallel=False):
     inner_solver = inner_solver_test_class(lmbd, h, loss_class, gamma=gamma)
     metrics = LTL_evaluation(data_valid['X_train'], data_valid['Y_train'], data_valid['X_test'], data_valid['Y_test'],
-                          inner_solver, metric_dict=metric_dict, verbose=verbose)
+                             inner_solver, metric_dict=metric_dict, verbose=verbose)
 
     if is_parallel and results.save_dir is not None:
         results = Results.get_from_results(results)
@@ -121,7 +121,7 @@ def val(h, val_metric, lambdas, gamma, inner_solver_test_class, loss_class,
     lambdas = HyperList(lambdas)
     inner_results = Results(None, False, False, name=results.name)
 
-    params = {'h': h, 'lmbd':lambdas, 'gamma':gamma,
+    params = {'h': h, 'lmbd':lambdas, 'gamma': gamma,
               'inner_solver_test_class': inner_solver_test_class, 'loss_class': loss_class,
               'data_valid': data_valid, 'metric_dict': metric_dict, 'results': inner_results, 'verbose': verbose,
               'is_parallel': True}

@@ -31,19 +31,21 @@ class HingeLoss(Loss):
 
 
     @staticmethod
-    @numba.jit(nopython=True)
+    # @numba.jit(nopython=True)
     def get(yhat, y):
         return np.maximum(1 - yhat * y, 0)
 
     @staticmethod
-    @numba.jit(nopython=True)
+    # @numba.jit(nopython=True)
     def grad(yhat, y):
+        if isinstance(y, np.int16):
+            return 0 if 1 <= yhat*y else -y
         d = -y
         d[1 <= yhat * y] = 0
         return d
 
     @staticmethod
-    @numba.jit(nopython=True)
+    # @numba.jit(nopython=True)
     def conj(u, y):
         n = u.shape[0]
         res = n * u / y
@@ -52,7 +54,7 @@ class HingeLoss(Loss):
         return res
 
     @staticmethod
-    @numba.jit(nopython=True)
+    # @numba.jit(nopython=True)
     def prox(u, y, gamma):
         return prox.prox_G_hinge_numba(u, y, gamma)
 
@@ -65,7 +67,7 @@ class AbsoluteLoss(Loss):
 
 
     @staticmethod
-    @numba.jit(nopython=True)
+    #@numba.jit(nopython=True)
     def get(yhat, y):
         return np.abs(yhat - y)
 
@@ -89,3 +91,19 @@ class AbsoluteLoss(Loss):
     @numba.jit(nopython=True)
     def prox(u, y, gamma):
         return prox.prox_G_abs_numba(u, y, gamma)
+
+
+class MSE(Loss):
+    L = 1
+    name = 'MSE'
+
+
+    @staticmethod
+    #@numba.jit(nopython=True)
+    def get(yhat, y):
+        return 0.5*((yhat - y)**2)
+
+    @staticmethod
+    @numba.jit(nopython=True)
+    def grad(yhat, y):
+        return yhat - y
