@@ -168,7 +168,7 @@ def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10), a
                  save_res=save_res, verbose=verbose)
 
 
-def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-1, 6, num=10),
+def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=30), alphas=np.logspace(-1, 6, num=30),
                  gamma=None, n_processes=30, n_tasks=75, n_val_tasks=25, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str='ssubgd', show_plot=True, save_res=True, verbose=1):
 
