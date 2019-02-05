@@ -84,22 +84,24 @@ def plot_resultsList(T, results_dict, y_label='', title='', save_dir_path=None, 
 
     alpha = 0.1
     x = list(range(T))
-    for _, results in results_dict.items():
-        _plot(results.metrics, '', alpha, x=x, label=results.name)
 
-    plt.title(title)
-    plt.ylabel(y_label)
-    plt.xlabel('T')
-    plt.xlim(right=x[-1], left=x[0])
-    plt.legend()
+    for metric in next(iter(results_dict.values())).metrics.keys():
+        for _, results in results_dict.items():
+            _plot(results.metrics[metric], '', alpha, x=x, label=results.name)
 
-    if save_dir_path is not None:
-        pylab.savefig(os.path.join(save_dir_path, filename+'.png'))
-        #pylab.savefig(os.path.join(save_dir_path, filename+'.pgf'))
-        #tikz_save(os.path.join(save_dir_path, filename+'.txt'))
-    if show_plot:
-        plt.show()
-    plt.close()
+        plt.title(title+'-'+metric)
+        plt.ylabel(y_label)
+        plt.xlabel('T')
+        plt.xlim(right=x[-1], left=x[0])
+        plt.legend()
+
+        if save_dir_path is not None:
+            pylab.savefig(os.path.join(save_dir_path, filename+'-'+metric+'.png'))
+            #pylab.savefig(os.path.join(save_dir_path, filename+'.pgf'))
+            #tikz_save(os.path.join(save_dir_path, filename+'.txt'))
+        if show_plot:
+            plt.show()
+        plt.close()
 
 
 def plot_2fig(metric_ltl, metric_itl, metric_oracle, metric_inner_initial=None, metric_inner_oracle=None,
