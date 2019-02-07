@@ -28,7 +28,7 @@ class TasksGenerator:
 
         elif tasks_generation == 'expclass':
             self.rx = 1
-            self.y_dist = 'nonoisemargin'
+            self.y_dist = 'logisticmargin'
             self._task_gen_func = classification_tasks_generator
 
         np.random.seed(seed)

@@ -14,10 +14,10 @@ n_processes = args.n_processes
 
 
 def exp_len():  # 8 train example were used in Argiryu et al. 2007
-    for i in [8]:
+    for i in [8, 16]:
         #lenk_multi_seed(n_train=i, n_processes=n_processes)
-        lenk_multi_seed(reg=False, n_train=i, inner_solver_str=['ssubgd', 'subgd'],
-                        inner_solver_test_str=['ssubgd', 'subgd'], n_processes=n_processes)
+        lenk_multi_seed(reg=False, n_train=i, inner_solver_str=['ssubgd', 'fista'],
+                        inner_solver_test_str=['ssubgd', 'fista'], n_processes=n_processes)
 
 
 def exp_len_itl():
