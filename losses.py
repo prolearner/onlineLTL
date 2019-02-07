@@ -51,6 +51,8 @@ class HingeLoss(Loss):
         res = n * u / y
         res[(-1 > res) & (res > 0)] = np.inf
         res = np.mean(res)
+        if res == np.inf:
+            raise ValueError("infinite value in conjugate loss")
         return res
 
     @staticmethod
@@ -77,18 +79,19 @@ class AbsoluteLoss(Loss):
         return np.sign(yhat - y)
 
     @staticmethod
-    @numba.jit(nopython=True)
+    #@numba.jit(nopython=True)
     def conj(u, y):
         n = u.shape[0]
         res = n * u * y
         res[np.abs(n * u) > 1] = np.inf
+        res_store = res
         res = np.mean(res)
         if res == np.inf:
             raise ValueError("infinite value in conjugate loss")
         return res
 
     @staticmethod
-    @numba.jit(nopython=True)
+    #@numba.jit(nopython=True)
     def prox(u, y, gamma):
         return prox.prox_G_abs_numba(u, y, gamma)
 

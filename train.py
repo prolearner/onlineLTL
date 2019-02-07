@@ -60,8 +60,8 @@ def get_name_meta(loss_class, data_valid, lmbd, inner_solver_test_class, data_tr
     n_tasks = len(data_train['Y_train'])
     n_tasks_eval = len(data_valid['Y_train'])
     return 'loss' + loss_class.name + 'is' + inner_solver_class.name + 'ist' + inner_solver_test_class.name + \
-              'alpha' + str(alpha) + 'lmbd' + str(lmbd) + 'T' + str(n_tasks) + 'n' + str(n) + \
-              'dim' + str(dim) + 'taskseval' + str(n_tasks_eval) + 'neval' + str(n_eval)
+           'alpha' + str(alpha) + 'lmbd' + str(lmbd) + 'T' + str(n_tasks) + 'n' + str(n) + \
+           'dim' + str(dim) + 'taskseval' + str(n_tasks_eval) + 'neval' + str(n_eval)
 
 
 def get_name(loss_class, data_valid, lmbd, inner_solver_test_class):

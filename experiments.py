@@ -156,7 +156,7 @@ def multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6, 3,
                          title=str(len(res_list))+' runs')
 
 
-def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-3, 3, num=10), reg=False,
+def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=30), alphas=np.logspace(-3, 3, num=30), reg=False,
                  n_train=None,gamma=None, n_processes=30, n_tasks=100, n_val_tasks=40, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
                  use_hyper_bounds=False, inner_solver_test_str=('ssubgd', 'fista'), show_plot=True, save_res=True, verbose=1):
 
@@ -237,7 +237,9 @@ def dg(d, k): return None if d is None else d[k]
 
 
 def accuracy(y_true, y_pred):
-    return accuracy_score(y_true.astype(int), y_pred.astype(int))
+    yp = np.ones_like(y_true)
+    yp[y_pred < 0] = -1
+    return accuracy_score(y_true, yp)
 
 
 def ne_exp_var(y_true, y_pred):

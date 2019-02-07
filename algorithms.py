@@ -1,6 +1,6 @@
 import numpy as np
 
-from losses import Loss
+from losses import Loss, HingeLoss, AbsoluteLoss
 from utils import PrintLevels
 import numba
 
@@ -87,10 +87,6 @@ class ISTA(InnerSolver):
             self.v[k+1] = -(1/self.lmbd)*X_n.T @ self.u[k+1]
 
             if verbose > PrintLevels.inner_train:
-                self.v_mean = self.v[:k].mean(axis=0)
-                self.w = self.v_mean + self.h
-
-                #print('grad', grad)
                 print('dual train loss iter   %d: %f' % (k, self.train_loss_dual(X_n, y_n, k)))
                 print('primal train loss iter %d: %f' % (k, self.train_loss(X_n, y_n, k)))
 
@@ -353,16 +349,16 @@ def save_3d_csv(path, arr3d: np.ndarray, hyper_str=None):
 
 # Tests
 
-def t_inner_algo(inner_solver_class=(FISTA, ISTA, InnerSubGD), seed=1, n_iter=1000):
+def t_inner_algo(inner_solver_class=(FISTA, InnerSubGD), seed=1, n_iter=500):
     from data.data_generator import TasksGenerator
     from losses import AbsoluteLoss
 
     n_dims = 30
     y_snr = 1000000000000
 
-    n_train = 100
+    n_train = 1000
     tasks_gen = TasksGenerator(seed=seed, val_perc=0.0, n_dims=n_dims, n_train=n_train, y_snr=y_snr, tasks_generation='expclass',
-                               task_std=0, w_bar=1)
+                               task_std=0, w_bar=4)
 
     data_train, oracle_train = tasks_gen(n_tasks=10, n_train=n_train)
 
@@ -374,9 +370,9 @@ def t_inner_algo(inner_solver_class=(FISTA, ISTA, InnerSubGD), seed=1, n_iter=10
     x_cp, Y_cp = copy.copy(X_train), copy.copy(Y_train)
     X_test, Y_test = data_train['X_test'][task_n], data_train['Y_test'][task_n]
     for isc in inner_solver_class:
-        inner_solver = isc(lmbd=0.01, h=np.zeros(n_dims), loss_class=AbsoluteLoss, gamma=None)
+        inner_solver = isc(lmbd=0.001, h=np.zeros(n_dims), loss_class=HingeLoss, gamma=None)
         inner_solver(X_train, Y_train, n_iter=n_iter,  verbose=4)
-        losses_dict[isc] = inner_solver.evaluate(X_train, Y_train)
+        losses_dict[isc] = inner_solver.train_loss(X_train, Y_train, -1)
         w_dict[isc] = inner_solver.w
 
     print('ws', w_dict)
