@@ -71,9 +71,12 @@ class InnerSolver:
 class ISTA(InnerSolver):
     name = 'ista'
 
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, rx=1, **kwargs):
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
+
+        # get rx from data:
+        rx = get_rx(X_n)
 
         # initialization
         self._init(n_iter, dim, h, p=np.zeros(n))
@@ -110,9 +113,12 @@ class ISTA(InnerSolver):
 class FISTA(ISTA):
     name = 'fista'
 
-    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, rx=1, **kwargs):
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, **kwargs):
         dim = X_n.shape[1]
         n = X_n.shape[0]
+
+        # get rx from data:
+        rx = get_rx(X_n)
 
         # initialization
         t = 1
@@ -254,6 +260,10 @@ def meta_ssgd(alpha, X, y, data_valid, inner_solver: InnerSolver, inner_solver_t
     return hs,  metric_results_dict
 
 
+def get_rx(X):
+    return np.max(np.linalg.norm(X, axis=1))
+
+
 def lmbd_theory(rx, L, sigma_h, n):
     return (np.sqrt(2) * rx * L / sigma_h) * np.sqrt(2 * (np.log(n) + 1) / n)
 
@@ -371,7 +381,7 @@ def t_inner_algo(inner_solver_class=(FISTA, InnerSubGD), seed=1, n_iter=500):
     X_test, Y_test = data_train['X_test'][task_n], data_train['Y_test'][task_n]
     for isc in inner_solver_class:
         inner_solver = isc(lmbd=0.001, h=np.zeros(n_dims), loss_class=HingeLoss, gamma=None)
-        inner_solver(X_train, Y_train, n_iter=n_iter,  verbose=4)
+        inner_solver(X_train, Y_train, n_iter=n_iter, rx=2,  verbose=4)
         losses_dict[isc] = inner_solver.train_loss(X_train, Y_train, -1)
         w_dict[isc] = inner_solver.w
 

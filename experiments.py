@@ -105,7 +105,7 @@ def exp(exp_str = 'exp1', seed=0, lambdas = np.logspace(-6, 3, num=10), alphas =
 
             h0 = np.zeros(tasks_gen.n_dims)
             ltl_res = meta_val(val_metric=val_metric, h0=h0, alphas=alphas, lambdas=lambdas, gamma=gamma,
-                               inner_solver_class=inner_solver_class,inner_solver_test_class=inner_solver_test_class,
+                               inner_solver_class=inner_solver_class, inner_solver_test_class=inner_solver_test_class,
                                loss_class=loss_class, data_train=data_train, data_valid=data_valid, data_test=data_test,
                                metric_dict=metric_dict, results=results, n_processes=n_processes, verbose=verbose)
             res_dict[ltl_res.name] = ltl_res
@@ -114,7 +114,8 @@ def exp(exp_str = 'exp1', seed=0, lambdas = np.logspace(-6, 3, num=10), alphas =
     return res_dict
 
 
-def multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6, 3, num=10), alphas=np.logspace(-6, 3, num=10),
+def multi_seed(exp_str='exp1', seeds=list(range(10)), lambdas=np.logspace(-6, 3, num=10), alphas=np.logspace(-6, 3,
+                                                                                                             num=10),
                  gamma=None, n_processes=30, w_bar=4, y_snr=100, task_std=1, n_tasks=100, n_train=100, n_dims=30,
                  n_tasks_test=200, n_test=100, val_perc=0.0, search_oracle=False,
                  exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),

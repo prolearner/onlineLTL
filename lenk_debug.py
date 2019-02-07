@@ -50,24 +50,23 @@ task_range_tr = np.random.permutation(n_tasks)
 # data_train, data_val, data_test = data_load.computer_data_ge_reg(n_train_tasks=180, n_val_task=0)
 
 # ITL
-
-losses_test = np.zeros(n_tasks)
-mse_test = np.zeros(n_tasks)
+solvers = [algs.InnerSubGD, algs.FISTA]
+losses_train = []
 n_train = 8  # 8 as in argyriou et al. 2007 (pag 6)
-for t in range(n_tasks):
-    X_train, Y_train = data_m[t][:n_train], labels_m[t][:n_train]
-    X_test, Y_test = data_test_m[t], labels_test_m[t]
+for solver_class in solvers:
+    for t in [90]:
+        X_train, Y_train = data_m[t][:n_train], labels_m[t][:n_train]
+        X_test, Y_test = data_test_m[t], labels_test_m[t]
 
-    solver = algs.InnerSSubGD(lmbd=0.46415888336127775, h=np.zeros_like(X_train[0]), loss_class=losses.AbsoluteLoss)
+        solver = solver_class(lmbd=0.46415888336127775, h=np.zeros_like(X_train[0]), loss_class=losses.AbsoluteLoss)
+        solver(X_train, Y_train, verbose=5, n_iter=500)
 
-    solver(X_train, Y_train, verbose=0, n_iter=None)
+        losses_train.append(solver.train_loss(X_train, Y_train, 499))
+        #print('train-loss ' + str(t), losses_train[t])
 
-    losses_test[t] = np.mean(np.abs(X_test @ solver.w - Y_test))
-    mse_test[t] = np.mean(np.abs(X_test @ solver.w - Y_test)**2)
-    print('test-loss ' + str(t), losses_test[t])
-    #print('test-mse ' + str(t), mse_test[t])
+print('train-losses', losses_train)
+print(np.sqrt(2))
 
-print('test-loss mean {}, std {}'.format(np.mean(losses_test), np.std(losses_test)))
-print('test-mse mean {}, std {}'.format(np.mean(mse_test), np.std(mse_test)))
+
 
 

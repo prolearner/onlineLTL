@@ -26,13 +26,6 @@ def prox_G_abs_numba(u, y, gamma):
     prox = u - y*gamma
     return np.clip(prox, a_min=-1/n, a_max=1/n)
 
-
-#@numba.jit(nopython=True)
-def prox_G_abs_v2_numba(u, y, gamma):
-    n = u.shape[0]
-    return u - gamma*prox_abs(u/gamma, y, 1/(n*gamma))
-
-
 @numba.jit(nopython=True)
 def prox_G_hinge_numba(u, y, gamma):
     n = u.shape[0]
@@ -40,6 +33,12 @@ def prox_G_hinge_numba(u, y, gamma):
     prox[prox < - y/n] = (-y/n)[prox < - y/n]
     prox[prox > 0] = 0
     return prox
+
+
+# @numba.jit(nopython=True)
+def prox_G_abs_v2_numba(u, y, gamma):
+    n = u.shape[0]
+    return u - gamma*prox_abs(u/gamma, y, 1/(n*gamma))
 
 
 @numba.jit(nopython=True)
@@ -57,7 +56,6 @@ def prox_abs(u, y, gamma):
     prox[diff > gamma] = (u - gamma)[diff > gamma]
 
     # due to the nature of the conjugate of the absolute loss, the above two operations can cause problems
-
 
     return prox
 
