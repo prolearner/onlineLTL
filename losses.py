@@ -27,8 +27,6 @@ class Loss:
 class HingeLoss(Loss):
     L = 1
     name = 'Hinge'
-    prox_G = prox.prox_G(prox.prox_l_conj(prox.prox_hinge))
-
 
     @staticmethod
     # @numba.jit(nopython=True)
@@ -64,8 +62,6 @@ class HingeLoss(Loss):
 class AbsoluteLoss(Loss):
     L = 1
     name = 'Abs'
-    prox_G = prox.prox_G(prox.prox_l_conj(prox.prox_abs))
-    #prox_G = prox.prox_G(prox.prox_abs_conj)
 
 
     @staticmethod
@@ -74,7 +70,7 @@ class AbsoluteLoss(Loss):
         return np.abs(yhat - y)
 
     @staticmethod
-    @numba.jit(nopython=True)
+    #@numba.jit(nopython=True)
     def grad(yhat, y):
         return np.sign(yhat - y)
 
@@ -107,6 +103,6 @@ class MSE(Loss):
         return 0.5*((yhat - y)**2)
 
     @staticmethod
-    @numba.jit(nopython=True)
+    #@numba.jit(nopython=True)
     def grad(yhat, y):
         return yhat - y

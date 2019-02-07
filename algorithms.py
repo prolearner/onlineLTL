@@ -90,8 +90,8 @@ class ISTA(InnerSolver):
             self.v[k+1] = -(1/self.lmbd)*X_n.T @ self.u[k+1]
 
             if verbose > PrintLevels.inner_train:
-                print('dual train loss iter   %d: %f' % (k, self.train_loss_dual(X_n, y_n, k)))
-                print('primal train loss iter %d: %f' % (k, self.train_loss(X_n, y_n, k)))
+                print('primal, dual train loss iter   %d: %f, %f' % (k, self.train_loss_dual(X_n, y_n, k),
+                                                                     self.train_loss(X_n, y_n, k)))
 
         self.v_mean = self.v[:-1].mean(axis=0)
         self.w = self.v_mean + self.h
@@ -136,8 +136,8 @@ class FISTA(ISTA):
             p = self.u[k+1] + ((t_prec-1)/t)*(self.u[k+1] - self.u[k])
 
             if verbose > PrintLevels.inner_train:
-                print('dual train loss iter   %d: %f' % (k, self.train_loss_dual(X_n, y_n, k)))
-                print('primal train loss iter %d: %f' % (k, self.train_loss(X_n, y_n, k)))
+                print('primal, dual train loss iter   %d: %f, %f' % (k, self.train_loss_dual(X_n, y_n, k),
+                                                                     self.train_loss(X_n, y_n, k)))
 
         self.v_mean = self.v[:-1].mean(axis=0)
         self.w = self.v_mean + self.h
@@ -358,30 +358,28 @@ def save_3d_csv(path, arr3d: np.ndarray, hyper_str=None):
 
 
 # Tests
-
-def t_inner_algo(inner_solver_class=(FISTA, InnerSubGD), seed=1, n_iter=500):
+def t_inner_algo(inner_solver_class=(FISTA, InnerSubGD), seed=2, n_iter=200):
     from data.data_generator import TasksGenerator
     from losses import AbsoluteLoss
 
     n_dims = 30
     y_snr = 1000000000000
-
     n_train = 1000
     tasks_gen = TasksGenerator(seed=seed, val_perc=0.0, n_dims=n_dims, n_train=n_train, y_snr=y_snr, tasks_generation='expclass',
-                               task_std=0, w_bar=4)
+                               task_std=3, w_bar=4)
 
     data_train, oracle_train = tasks_gen(n_tasks=10, n_train=n_train)
 
     import copy
     w_dict = {}
     losses_dict = {}
-    task_n = 1
+    task_n = 6
     X_train, Y_train = data_train['X_train'][task_n], data_train['Y_train'][task_n]
     x_cp, Y_cp = copy.copy(X_train), copy.copy(Y_train)
     X_test, Y_test = data_train['X_test'][task_n], data_train['Y_test'][task_n]
     for isc in inner_solver_class:
-        inner_solver = isc(lmbd=0.001, h=np.zeros(n_dims), loss_class=HingeLoss, gamma=None)
-        inner_solver(X_train, Y_train, n_iter=n_iter, rx=2,  verbose=4)
+        inner_solver = isc(lmbd=0.01, h=np.zeros(n_dims), loss_class=HingeLoss, gamma=None)
+        inner_solver(X_train, Y_train, n_iter=n_iter,  verbose=4)
         losses_dict[isc] = inner_solver.train_loss(X_train, Y_train, -1)
         w_dict[isc] = inner_solver.w
 

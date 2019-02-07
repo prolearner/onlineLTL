@@ -53,15 +53,16 @@ task_range_tr = np.random.permutation(n_tasks)
 solvers = [algs.InnerSubGD, algs.FISTA]
 losses_train = []
 n_train = 8  # 8 as in argyriou et al. 2007 (pag 6)
+n_iter = 200
 for solver_class in solvers:
-    for t in [90]:
+    for t in [80]:
         X_train, Y_train = data_m[t][:n_train], labels_m[t][:n_train]
         X_test, Y_test = data_test_m[t], labels_test_m[t]
 
         solver = solver_class(lmbd=0.46415888336127775, h=np.zeros_like(X_train[0]), loss_class=losses.AbsoluteLoss)
-        solver(X_train, Y_train, verbose=5, n_iter=500)
+        solver(X_train, Y_train, verbose=0, n_iter=n_iter)
 
-        losses_train.append(solver.train_loss(X_train, Y_train, 499))
+        losses_train.append(solver.train_loss(X_train, Y_train, n_iter-1))
         #print('train-loss ' + str(t), losses_train[t])
 
 print('train-losses', losses_train)
