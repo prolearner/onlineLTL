@@ -36,7 +36,7 @@ class HingeLoss(Loss):
     @staticmethod
     # @numba.jit(nopython=True)
     def grad(yhat, y):
-        if isinstance(y, np.int16):
+        if not isinstance(y, tuple):
             return 0 if 1 <= yhat*y else -y
         d = -y
         d[1 <= yhat * y] = 0
