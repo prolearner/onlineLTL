@@ -6,10 +6,10 @@ import numba
 
 
 class InnerSolver:
-    default_n_iter = 200
+    default_n_iter = 900
     name = None
 
-    def __init__(self, lmbd=0.0, h=0.0, loss_class:Loss=None, gamma=None):
+    def __init__(self, lmbd=0.0, h=0.0, loss_class: Loss=None, gamma=None):
         self.lmbd = lmbd
         self.h = h
         self.loss_f = loss_class.get
@@ -53,7 +53,7 @@ class InnerSolver:
         return np.dot(X, self.w)
 
     def train_loss(self, X, y, k):
-        return np.mean(self.loss_f(np.dot(X, self.v[k] + self.h), y)) + self.lmbd*0.5*np.linalg.norm(self.v[k])
+        return np.mean(self.loss_f(X @ (self.v[k] + self.h), y)) + self.lmbd*0.5*(self.v[k].T @ self.v[k])
 
     def init_from_solver(self, other):
         self.h = other.h
@@ -93,18 +93,31 @@ class ISTA(InnerSolver):
                 print('primal, dual train loss iter   %d: %f, %f' % (k, self.train_loss_dual(X_n, y_n, k),
                                                                      self.train_loss(X_n, y_n, k)))
 
+        if self.dual_gap(X_n, y_n, k) > 1e-6:
+            raise ValueError('not optimal value!')
+
+        self.u = self.u[:k+2]
+        self.v = self.v[:k+2]
         self.v_mean = self.v[:-1].mean(axis=0)
         self.w = self.v_mean + self.h
         return self.u
 
-    def smooth_obj_part(self, u, X_n):
-        return 0.5*(1/self.lmbd) * ((X_n.T @ u).T @ (X_n.T @ u)) - (X_n @ self.h).T @ u
+    def dual_gap(self, X_n, y_n, k):
+        lp = self.train_loss(X_n, y_n, k)
+        ld = self.train_loss_dual(X_n, y_n, k)
+        return lp + ld
 
-    def grad_smooth_obj_part(self, u, X_n):
-        return (1/self.lmbd) * (X_n @ X_n.T @ u) - X_n @ self.h
+    def sol_distance(self, k):
+        return np.linalg.norm(self.u[k] - self.u[k-1])
 
-    def evaluate_dual(self, X, y):
-        return self.conj_f(np.dot(X, self.w), y)
+    def smooth_obj_part(self, u, X):
+        return (0.5/self.lmbd)*(u.T @ X @ X.T @ u) - (u.T @ X @ self.h)
+
+    def grad_smooth_obj_part(self, u, X):
+        return (1/self.lmbd) * (X @ X.T @ u) - X @ self.h
+
+    def evaluate_dual(self, y, k):
+        return self.conj_f(self.u[k], y)
 
     def train_loss_dual(self, X, y, k):
         return self.conj_f(self.u[k], y) + self.smooth_obj_part(self.u[k], X)
@@ -128,6 +141,7 @@ class FISTA(ISTA):
             print('--- start inner training')
 
         gamma = self.lmbd / (n*(rx**2))
+        optimal = False
         for k in range(n_iter):
             self.u[k+1] = self.prox_f(p - gamma*self.grad_smooth_obj_part(p, X_n), y_n, gamma)
             self.v[k+1] = -(1/self.lmbd)*X_n.T @ self.u[k+1]
@@ -138,7 +152,12 @@ class FISTA(ISTA):
             if verbose > PrintLevels.inner_train:
                 print('primal, dual train loss iter   %d: %f, %f' % (k, self.train_loss_dual(X_n, y_n, k),
                                                                      self.train_loss(X_n, y_n, k)))
+        #print(k)
+        if self.dual_gap(X_n, y_n, k) > 1e-6:
+            raise ValueError('not optimal value!')
 
+        self.u = self.u[:k+2]
+        self.v = self.v[:k+2]
         self.v_mean = self.v[:-1].mean(axis=0)
         self.w = self.v_mean + self.h
         return self.u
@@ -358,27 +377,27 @@ def save_3d_csv(path, arr3d: np.ndarray, hyper_str=None):
 
 
 # Tests
-def t_inner_algo(inner_solver_class=(FISTA, InnerSubGD), seed=2, n_iter=200):
+def t_inner_algo(inner_solver_class=(InnerSubGD, FISTA, ISTA), seed=2, n_iter=2000):
     from data.data_generator import TasksGenerator
     from losses import AbsoluteLoss
 
-    n_dims = 30
-    y_snr = 1000000000000
-    n_train = 1000
-    tasks_gen = TasksGenerator(seed=seed, val_perc=0.0, n_dims=n_dims, n_train=n_train, y_snr=y_snr, tasks_generation='expclass',
-                               task_std=3, w_bar=4)
+    n_dims = 10
+    y_snr = 100000000000000
+    n_train = 10
+    tasks_gen = TasksGenerator(seed=seed, val_perc=0.0, n_dims=n_dims, n_train=n_train, y_snr=y_snr, tasks_generation='exp1',
+                               task_std=0, w_bar=4)
 
     data_train, oracle_train = tasks_gen(n_tasks=10, n_train=n_train)
 
     import copy
     w_dict = {}
     losses_dict = {}
-    task_n = 6
+    task_n = 2
     X_train, Y_train = data_train['X_train'][task_n], data_train['Y_train'][task_n]
     x_cp, Y_cp = copy.copy(X_train), copy.copy(Y_train)
     X_test, Y_test = data_train['X_test'][task_n], data_train['Y_test'][task_n]
     for isc in inner_solver_class:
-        inner_solver = isc(lmbd=0.01, h=np.zeros(n_dims), loss_class=HingeLoss, gamma=None)
+        inner_solver = isc(lmbd=0.01, h=np.zeros(n_dims), loss_class=AbsoluteLoss, gamma=None)
         inner_solver(X_train, Y_train, n_iter=n_iter,  verbose=4)
         losses_dict[isc] = inner_solver.train_loss(X_train, Y_train, -1)
         w_dict[isc] = inner_solver.w

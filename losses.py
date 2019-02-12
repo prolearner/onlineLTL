@@ -9,7 +9,7 @@ class Loss:
 
     @staticmethod
     def get(yhat, y):
-        return np.maximum(1 - yhat * y, 0)
+        raise NotImplementedError
 
     @staticmethod
     def grad(yhat, y):
@@ -36,7 +36,7 @@ class HingeLoss(Loss):
     @staticmethod
     # @numba.jit(nopython=True)
     def grad(yhat, y):
-        if not isinstance(y, tuple):
+        if not (isinstance(y, tuple) or isinstance(y, np.ndarray)):
             return 0 if 1 <= yhat*y else -y
         d = -y
         d[1 <= yhat * y] = 0
@@ -62,7 +62,6 @@ class HingeLoss(Loss):
 class AbsoluteLoss(Loss):
     L = 1
     name = 'Abs'
-
 
     @staticmethod
     #@numba.jit(nopython=True)
