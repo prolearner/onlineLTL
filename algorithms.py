@@ -93,8 +93,10 @@ class ISTA(InnerSolver):
                 print('primal, dual train loss iter   %d: %f, %f' % (k, self.train_loss_dual(X_n, y_n, k),
                                                                      self.train_loss(X_n, y_n, k)))
 
-            if self.dual_gap(X_n, y_n, k) > 1e-6:
+            if self.dual_gap(X_n, y_n, k) < 1e-6:
                 break
+
+        # print('ISTA iter {}'.format(k))
 
         self.u = self.u[:k+2]
         self.v = self.v[:k+2]
@@ -155,9 +157,7 @@ class FISTA(ISTA):
             if self.dual_gap(X_n, y_n, k+1) < 1e-6:
                 break
 
-        print('Fista iter {}'.format(k))
-        if k == n_iter-1:
-            raise ValueError('Not optimal value')
+        # print('ISTA iter {}'.format(k))
 
         self.u = self.u[:k+2]
         self.v = self.v[:k+2]

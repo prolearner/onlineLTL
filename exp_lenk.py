@@ -15,7 +15,6 @@ n_processes = args.n_processes
 
 def exp_len():  # 8 train example were used in Argiryu et al. 2007
     for i in [8]:
-        #lenk_multi_seed(n_train=i, n_processes=n_processes)
         lenk_multi_seed(seeds=list(range(10)), reg=True, n_train=i, inner_solver_str=['fista', 'ssubgd'],
                         inner_solver_test_str=['fista', 'ssubgd'], n_processes=n_processes)
 
