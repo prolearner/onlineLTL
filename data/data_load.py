@@ -57,7 +57,7 @@ def computer_data_ge_reg(n_train_tasks=100, n_val_task=40, threshold=5):
 
 def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True, balanced=False):
 
-    temp = sio.loadmat('lenk_data.mat')
+    temp = sio.loadmat('data/lenk_data.mat')
     train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (144 tasks of 20 elements)
     test_data = temp['Testdata']  # 720x15 last feature is y (score from 0 to 10) (26 tasks of 20 elements)
 
@@ -103,9 +103,11 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True, b
     def fill_with_tasks(data, task_range, data_m, labels_m, data_test_m, labels_test_m):
         for task_idx in task_range:
             es = np.random.permutation(len(labels_m[task_idx]))
+            es = list(range(len(labels_m[task_idx])))
 
             X_train, Y_train = data_m[task_idx][es], labels_m[task_idx][es]
             X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
+
 
             Y_train = Y_train.ravel()
             X_train = X_train
@@ -123,6 +125,30 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True, b
     fill_with_tasks(data_train, task_range_tr, data_m, labels_m, data_test_m, labels_test_m)
     fill_with_tasks(data_val, task_range_val, data_m, labels_m,  data_test_m, labels_test_m)
     fill_with_tasks(data_test, task_range_test, data_m, labels_m, data_test_m, labels_test_m)
+
+    def print_quality(data, n_train=16, name='', t_hold=1.0):
+        count_train_one_class = 0
+        count_test_one_class = 0
+        for i, Y in enumerate(data['Y_train']):
+            if np.abs(np.mean(Y[:n_train])) >= t_hold:
+                count_train_one_class += 1
+        for i, Y in enumerate(data['Y_test']):
+            if np.abs(np.mean(Y)) >= t_hold:
+                count_test_one_class += 1
+        print(name+' train/test tasks(n{}) with mean(Y) >= {} = {}/{}'.format(n_train, t_hold, count_train_one_class, count_test_one_class))
+        return count_train_one_class, count_test_one_class
+
+    def print_tot(n_train=16, t_hold=1.0):
+        ctr_train, cts_train = print_quality(data_train, n_train=n_train, t_hold=t_hold, name='train')
+        ctr_val, cts_val = print_quality(data_val, n_train=n_train, t_hold=t_hold, name='val')
+        ctr_test, cts_test = print_quality(data_test, n_train=n_train, t_hold=t_hold,  name='test')
+
+        ctr_tot = ctr_test + ctr_train + ctr_val
+        cts_tot = cts_test + cts_train + cts_val
+        print('total train/test tasks(n{}) with mean(Y) >= {} = {}/{}'.format(n_train, t_hold, ctr_tot, cts_tot))
+
+    print_tot(8, 0.5)
+    print_tot(8, 1)
 
     return data_train, data_val, data_test
 
@@ -249,5 +275,5 @@ def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
     0
 
 if __name__ == '__main__':
-    print(computer_data_gen())
+    computer_data_gen()
     #print(schools_data_gen())

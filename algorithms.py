@@ -6,7 +6,7 @@ import numba
 
 
 class InnerSolver:
-    default_n_iter = 900
+    default_n_iter = 2000
     name = None
 
     def __init__(self, lmbd=0.0, h=0.0, loss_class: Loss=None, gamma=None):
@@ -152,9 +152,12 @@ class FISTA(ISTA):
             if verbose > PrintLevels.inner_train:
                 print('primal, dual train loss iter   %d: %f, %f' % (k, self.train_loss_dual(X_n, y_n, k),
                                                                      self.train_loss(X_n, y_n, k)))
-            #print(k)
-            if self.dual_gap(X_n, y_n, k) > 1e-6:
+            if self.dual_gap(X_n, y_n, k+1) < 1e-6:
                 break
+
+        print('Fista iter {}'.format(k))
+        if k == n_iter-1:
+            raise ValueError('Not optimal value')
 
         self.u = self.u[:k+2]
         self.v = self.v[:k+2]
