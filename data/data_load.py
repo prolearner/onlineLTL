@@ -55,9 +55,9 @@ def computer_data_ge_reg(n_train_tasks=100, n_val_task=40, threshold=5):
     return computer_data_gen(n_train_tasks, n_val_task, cla=False)
 
 
-def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True):
+def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True, balanced=False):
 
-    temp = sio.loadmat('data/lenk_data.mat')
+    temp = sio.loadmat('lenk_data.mat')
     train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (144 tasks of 20 elements)
     test_data = temp['Testdata']  # 720x15 last feature is y (score from 0 to 10) (26 tasks of 20 elements)
 
@@ -249,5 +249,5 @@ def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
     0
 
 if __name__ == '__main__':
-    #print(computer_data_gen())
-    print(schools_data_gen())
+    print(computer_data_gen())
+    #print(schools_data_gen())
