@@ -5,7 +5,7 @@ import numpy as np
 parser = argparse.ArgumentParser(description='LTL online numpy experiments')
 parser.add_argument('--seed', type=int, default=0, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--n-processes', type=int, default=20, metavar='N',
+parser.add_argument('--n-processes', type=int, default=30, metavar='N',
                     help='n processes for grid search (default: 30)')
 
 
@@ -15,7 +15,7 @@ n_processes = args.n_processes
 
 def exp_len():  # 8 train example were used in Argiryu et al. 2007
     for i in [8]:
-        lenk_multi_seed(seeds=list(range(10)), reg=True, n_train=i, inner_solver_str=['fista', 'ssubgd'],
+        lenk_multi_seed(seeds=list(range(10)), reg=False, n_train=i, inner_solver_str=['fista', 'ssubgd'],
                         inner_solver_test_str=['fista', 'ssubgd'], n_processes=n_processes)
 
 
