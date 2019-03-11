@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.linalg import norm
 from scipy import io as sio
+from scipy.sparse import  issparse
 from sklearn.model_selection import train_test_split
 import pickle
 import os
@@ -260,36 +261,50 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=
 
     return data_train, data_val, data_test
 
-def load_delicious(path):
+
+def load_mulan_data(name, path, n_labels=983, sparse=False, features='nominal', test_set=True, test_size=0.5,
+                    label_location='end'):
     from skmultilearn.dataset import load_from_arff
+
+    if features == 'nominal':
+        input_feature_type = 'int'
+    elif features == 'numeric':
+        input_feature_type = 'double'
 
     def inner_load(path):
         return load_from_arff(path,
                               # number of labels
-                              label_count=983,
+                              label_count=n_labels,
                               # MULAN format, labels at the end of rows in arff data
-                              label_location='end',
+                              label_location=label_location,
                               # bag of words
-                              input_feature_type='int', encode_nominal=False,
+                              input_feature_type=input_feature_type, encode_nominal=False,
                               # sometimes the sparse ARFF loader is borked, like in delicious,
                               # scikit-multilearn converts the loaded data to sparse representations,
                               # so disabling the liac-arff sparse loader
-                              load_sparse=False,
+                              load_sparse=sparse,
                               # this decides whether to return attribute names or not, usually
                               # you don't need this
                               return_attribute_definitions=False)
 
     try:
-        data = pickle.load(open(os.path.join(path, "delicious.p"), "rb"))
+        data = pickle.load(open(os.path.join(path, name+".p"), "rb"))
 
     except:
-        X_train, y_train = inner_load(os.path.join(path, "delicious-train.arff"))
-        X_test, y_test = inner_load(os.path.join(path, "delicious-test.arff"))
+        if test_set:
+            X_train, y_train = inner_load(os.path.join(path, name+"-train.arff"))
+            X_test, y_test = inner_load(os.path.join(path, name+"-test.arff"))
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(*inner_load(os.path.join(path, name+".arff")),
+                                                                test_size=test_size)
 
         data = {'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
-        pickle.dump(data, open(os.path.join(path, "delicious.p"), "wb"))
+        pickle.dump(data, open(os.path.join(path, name+".p"), "wb"))
 
-    return data['X_train'].toarray(), data['y_train'].toarray(), data['X_test'].toarray(), data['y_test'].toarray()
+    if issparse(data['X_train']):
+        return data['X_train'].toarray(), data['y_train'].toarray(), data['X_test'].toarray(), data['y_test'].toarray()
+    else:
+        return data['X_train'], data['y_train'], data['X_test'], data['y_test']
 
 
 def delicious(n_train_tasks=400, n_val_tasks=200, path="data/delicious"):
@@ -303,7 +318,9 @@ def delicious(n_train_tasks=400, n_val_tasks=200, path="data/delicious"):
         labels_test_m = test['y']
 
     except:
-        X_train, y_train, X_test, y_test = load_delicious(path)
+        X_train, y_train, X_test, y_test = load_mulan_data('delicious', path, n_labels=983,
+                                                           sparse=False, features='nominal',
+                                                           test_set=True)
 
         def extract_task(i, X, y, balanced=True):
             Xi_pos = (X[y[:, i] > 0] - 0.5)*2
@@ -385,6 +402,106 @@ def delicious(n_train_tasks=400, n_val_tasks=200, path="data/delicious"):
     return data_train, data_val, data_test
 
 
+def cal500(n_train_tasks=100, n_val_tasks=33, path="data/CAL500"):
+    try:
+        train = pickle.load(open(os.path.join(path, "CAL500_train.p"), "rb"))
+        test = pickle.load(open(os.path.join(path, "CAL500_test.p"), "rb"))
+
+        data_m = train['x']
+        labels_m = train['y']
+        data_test_m = test['x']
+        labels_test_m = test['y']
+
+    except:
+        X_train, y_train, X_test, y_test = load_mulan_data('CAL500', path, n_labels=174,
+                                                           sparse=False, features='numeric',
+                                                           test_set=False, test_size=0.2)
+
+        def extract_task(i, X, y, balanced=False, add_bias=True):
+            Xi_pos = X[y[:, i] > 0]
+            yi_pos = np.ones(Xi_pos.shape[0])
+            Xi_neg = X[y[:, i] < 1]
+            yi_neg = - np.ones(Xi_neg.shape[0])
+
+            pos_len, neg_len = Xi_pos.shape[0], Xi_neg.shape[0]
+
+            if balanced:
+                if pos_len < neg_len:
+                    perm = np.random.permutation(neg_len)
+                    Xi_neg = Xi_neg[perm][:pos_len]
+                    yi_neg = yi_neg[perm][:pos_len]
+                else:
+                    perm = np.random.permutation(pos_len)
+                    Xi_pos = Xi_pos[perm][:neg_len]
+                    yi_pos = yi_pos[perm][:neg_len]
+
+            perm_idx = np.random.permutation(len(yi_neg) + len(yi_pos))
+            Xi = np.concatenate((Xi_pos, Xi_neg), axis=0)[perm_idx]
+            yi = np.concatenate((yi_pos, yi_neg), axis=0)[perm_idx]
+
+            if add_bias:
+                n_xi = np.ones((Xi.shape[0], Xi.shape[1] + 1))
+                n_xi[:, 1:] = Xi
+                Xi = n_xi
+
+            return Xi, yi
+
+        # Create the tasks: from multi-labeling to multi-task
+        n_tasks = y_train.shape[1]
+        data_m = []
+        labels_m = []
+        data_test_m = []
+        labels_test_m = []
+        for i in range(n_tasks):
+            Xi_train, yi_train = extract_task(i, X_train, y_train)
+            Xi_test, yi_test = extract_task(i, X_test, y_test)
+
+            data_m.append(Xi_train)
+            labels_m.append(yi_train)
+
+            data_test_m.append(Xi_test)
+            labels_test_m.append(yi_test)
+
+        pickle.dump({'x': data_m, 'y':labels_m}, open(os.path.join(path, "CAL500_train.p"), "wb"))
+        pickle.dump({'x': data_test_m, 'y':labels_test_m}, open(os.path.join(path, "CAL500_test.p"), "wb"))
+
+    n_tasks = len(labels_m)
+    task_shuffled = np.random.permutation(n_tasks)
+    task_range_tr = task_shuffled[0:n_train_tasks]
+    task_range_val = task_shuffled[n_train_tasks:n_train_tasks+n_val_tasks]
+    task_range_test = task_shuffled[n_train_tasks+n_val_tasks:]
+
+    data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+    data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+    data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
+
+    def fill_with_tasks(data, task_range, data_m, labels_m, data_test_m, labels_test_m):
+        for task_idx in task_range:
+            es = np.random.permutation(len(labels_m[task_idx]))
+
+            X_train, Y_train = data_m[task_idx][es], labels_m[task_idx][es]
+            X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
+
+            Y_train = Y_train.ravel()
+            X_train = X_train
+            X_val = []
+            Y_val = []
+
+            data['X_train'].append(X_train)
+            data['X_val'].append(X_val)
+            data['X_test'].append(X_test)
+            data['Y_train'].append(Y_train)
+            data['Y_val'].append(Y_val)
+            data['Y_test'].append(Y_test)
+
+    # make training, validation and test tasks:
+    fill_with_tasks(data_train, task_range_tr, data_m, labels_m, data_test_m, labels_test_m)
+    fill_with_tasks(data_val, task_range_val, data_m, labels_m,  data_test_m, labels_test_m)
+    fill_with_tasks(data_test, task_range_test, data_m, labels_m, data_test_m, labels_test_m)
+
+    return data_train, data_val, data_test
+
+
 
 
 def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
@@ -403,5 +520,6 @@ def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
     0
 
 if __name__ == '__main__':
-    print(delicious(path='delicious'))
+    #print(delicious(path='delicious'))
+    print(cal500(path='CAL500'))
     #print(schools_data_gen())
