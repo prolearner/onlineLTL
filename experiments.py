@@ -33,6 +33,9 @@ def exp_itl_only(exp_str='exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10),
     data_valid, oracle_valid = tasks_gen(n_tasks=n_tasks_val, n_train=n_train, n_test=n_test, sel='val')
     data_test, oracle_test = tasks_gen(n_tasks=n_tasks_test, n_train=n_train, n_test=n_test, sel='test')
 
+    print('n_tasks train, val ,test', len(data_train['X_train']), len(data_valid['X_train']),
+          len(data_test['X_train']))
+
     exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_name))
     save_exp_parameters(exp_parameters, exp_dir_path)
 
@@ -180,8 +183,8 @@ def delicious_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=1
                  save_res=save_res, verbose=verbose)
 
 
-def cal500_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 6, num=20), alphas=np.logspace(-6, 3, num=20),
-                 n_train=None, gamma=None, n_processes=30, n_tasks=100, n_val_tasks=34, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd'),
+def cal500_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=5), alphas=np.logspace(-3, 3, num=5),
+                 n_train=None, gamma=None, n_processes=30, n_tasks=100, n_val_tasks=31, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd'),
                  use_hyper_bounds=False, inner_solver_test_str=('ssubgd'), show_plot=True, save_res=True, verbose=1):
 
     return multi_seed(exp_str='cal500', seeds=seeds, lambdas=lambdas, alphas=alphas,

@@ -67,6 +67,21 @@ class InnerSolver:
         self.conj_f = other.conj_f
         self.prox_f = other.prox_f
 
+class NoOpt(InnerSolver):
+    name = 'noopt'
+    def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, **kwargs):
+        dim = X_n.shape[1]
+        n = X_n.shape[0]
+
+        # get rx from data:
+        rx = get_rx(X_n)
+
+        # initialization
+        self._init(n_iter, dim, h, p=np.zeros(n))
+        if verbose > PrintLevels.inner_train:
+            print('--- no inner training')
+
+        return self.u
 
 class ISTA(InnerSolver):
     name = 'ista'
@@ -218,7 +233,8 @@ class InnerSubGD(InnerSolver):
         return self.v
 
 
-inner_dict = {InnerSSubGD.name: InnerSSubGD, FISTA.name: FISTA, ISTA.name: ISTA, InnerSubGD.name: InnerSubGD}
+inner_dict = {InnerSSubGD.name: InnerSSubGD, FISTA.name: FISTA, ISTA.name: ISTA, InnerSubGD.name: InnerSubGD,
+              NoOpt.name: NoOpt}
 
 
 def inner_solver_selector(solver_str):
