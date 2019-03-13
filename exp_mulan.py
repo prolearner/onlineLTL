@@ -18,15 +18,16 @@ mulan_dict = {'Corel5k': {'n_tasks':100, 'n_val_tasks': 100, 'n_train': 20},
               'CAL500': {'n_tasks':100, 'n_val_tasks': 40, 'n_train': None},
               'delicious': {'n_tasks':500, 'n_val_tasks': 183, 'n_train': 20},
               'bookmarks': {'n_tasks':100, 'n_val_tasks': 40, 'n_train': 20},
-              'bibtex': {'n_tasks':80, 'n_val_tasks': 40, 'n_train': 20}
+              'bibtex': {'n_tasks':80, 'n_val_tasks': 40, 'n_train': 10}
               }
 
 
 def exp():
-    mulan_multi_seed(data_name=dataset_name, seeds=list(range(10)),lambdas=np.logspace(-3, 3, num=5),
-                         alphas=np.logspace(-3, 3, num=5), inner_solver_str=['ssubgd'],
-                         inner_solver_test_str=['ssubgd'],
-                         n_processes=n_processes, **mulan_dict[dataset_name])
+    for n in [5, 10, 20, 100, None]:
+        mulan_multi_seed(data_name=dataset_name, seeds=list(range(10)),lambdas=np.logspace(-3, 3, num=5),
+                             alphas=np.logspace(-3, 3, num=5), inner_solver_str=['ssubgd'],
+                             inner_solver_test_str=['ssubgd'], n_train=n,
+                             n_processes=n_processes, **mulan_dict[dataset_name])
 
 
 def exp_itl():
