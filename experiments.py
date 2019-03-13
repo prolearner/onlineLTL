@@ -193,6 +193,16 @@ def cal500_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=5), 
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
                  save_res=save_res, verbose=verbose)
 
+def corel5k_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=5), alphas=np.logspace(-3, 3, num=5),
+                 n_train=None, gamma=None, n_processes=30, n_tasks=200, n_val_tasks=73, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd'),
+                 use_hyper_bounds=False, inner_solver_test_str=('ssubgd'), show_plot=True, save_res=True, verbose=1):
+
+    return multi_seed(exp_str='corel5k', seeds=seeds, lambdas=lambdas, alphas=alphas,
+                 gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=n_train, n_dims=0,
+                 n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
+                 use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
+                 save_res=save_res, verbose=verbose)
+
 
 def school_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=30), alphas=np.logspace(-1, 6, num=30),
                  gamma=None, n_processes=30, n_tasks=75, n_val_tasks=25, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd', 'subgd'),
@@ -269,6 +279,16 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
                                                    n_val_tasks=n_val_tasks,
                                                    val_perc=val_perc)
         exp_name = 'expCal500' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
+                   + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
+        loss = HingeLoss
+        val_metric = 'loss'
+        metric_dict = {'accuracy': accuracy}
+    elif exp_str == 'corel5k':
+        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.corel5k,
+                                                   seed=seed, n_train_tasks=n_train_tasks,
+                                                   n_val_tasks=n_val_tasks,
+                                                   val_perc=val_perc)
+        exp_name = 'corel5k' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
                    + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
