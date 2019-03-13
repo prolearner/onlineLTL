@@ -334,7 +334,7 @@ mulan_settings = {'Corel5k': {'balanced':True, 'add_bias':True, 'multi_transform
                                 'normalization': 'meanstd', 'pca_comp': None},
                   'bookmarks': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'meanstd', 'pca_comp': None},
-                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsall',
+                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'none', 'pca_comp': None}
                   }
 
@@ -392,14 +392,18 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
         # task with most examples has index 112
         n_tasks = y_train.shape[1]
         most_task = np.argmax(np.array([np.sum(y_train[:, i] > 0) for i in range(n_tasks)]))
-        print(most_task)
+        most_task_n = np.max(np.array([np.sum(y_train[:, i] > 0) for i in range(n_tasks)]))
+        print('the task {} has the max number of examples: {}'.format(most_task, most_task_n))
 
         def extract_task(i, X, y, bal=balanced, add_b=add_bias):
             Xi_pos = X[y[:, i] > 0]
             yi_pos = np.ones(Xi_pos.shape[0])
 
             if 'onevsmaxn' in multi_transform:
-                Xi_neg = X[y[:, i] < 1] if i == most_task else X[y[:, most_task] > 0]
+                if most_task == i:
+                    return None, None
+                else:
+                    Xi_neg = X[np.logical_and(y[:, most_task] > 0, y[:, i] < 1)]
             elif 'onevsall' in multi_transform:
                 Xi_neg = X[y[:, i] < 1]  # one against all the other lables
             elif 'onevsrandom' in multi_transform:
@@ -441,22 +445,28 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
 
         # Create the tasks: from multi-labeling to multi-task
         data_m, labels_m, labels_test_m, data_test_m = [], [], [], []
+        min_size = 1000000
+        max_size = 0
         for i in range(n_tasks):
             Xi_train, yi_train = extract_task(i, X_train, y_train)
             Xi_test, yi_test = extract_task(i, X_test, y_test)
 
-            if len(yi_train) >= min_n_per_task and len(yi_test) != 0:
+            if Xi_train is not None and len(yi_train) >= min_n_per_task and len(yi_test) != 0:
                 data_m.append(Xi_train)
                 labels_m.append(yi_train)
 
                 data_test_m.append(Xi_test)
                 labels_test_m.append(yi_test)
+                if len(yi_train) < min_size:
+                    min_size = len(yi_train)
+                if len(yi_train) > max_size:
+                    max_size = len(yi_train)
 
                 # task statistics:
                 print('task {}, n={}, n_test={},'
                       ' balance=tr: {:.3f}, ts: {:.3f}'.format(i, len(yi_train), len(yi_test), np.mean(yi_train),
                                                                np.mean(yi_test)))
-
+        print('tasks min/max size', min_size, max_size)
         dataset_dict = {'train':{'x': data_m, 'y':labels_m}, 'test': {'x': data_test_m, 'y':labels_test_m}}
         pickle.dump(dataset_dict, open(dataset_file_path, "wb"))
 
