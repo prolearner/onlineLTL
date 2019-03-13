@@ -334,7 +334,7 @@ mulan_settings = {'Corel5k': {'balanced':True, 'add_bias':True, 'multi_transform
                                 'normalization': 'meanstd', 'pca_comp': None},
                   'bookmarks': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'meanstd', 'pca_comp': None},
-                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsmaxn_rand',
+                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsall',
                                 'normalization': 'none', 'pca_comp': None}
                   }
 

@@ -18,7 +18,7 @@ mulan_dict = {'Corel5k': {'n_tasks':100, 'n_val_tasks': 100, 'n_train': 20},
               'CAL500': {'n_tasks':100, 'n_val_tasks': 40, 'n_train': None},
               'delicious': {'n_tasks':500, 'n_val_tasks': 183, 'n_train': 20},
               'bookmarks': {'n_tasks':100, 'n_val_tasks': 40, 'n_train': 20},
-              'bibtex': {'n_tasks':80, 'n_val_tasks': 40}
+              'bibtex': {'n_tasks': 80, 'n_val_tasks': 40}
               }
 
 
