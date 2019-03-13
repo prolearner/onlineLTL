@@ -18,7 +18,7 @@ class RealDatasetGenerator:
 
         ntt = n_train_tasks
 
-        self.data_train, self.data_val, self.data_test = gen_f(ntt, n_val_tasks)
+        self.data_train, self.data_val, self.data_test, self.desc = gen_f(n_train_tasks=ntt, n_val_tasks=n_val_tasks)
 
         self.n_train = None
         self.n_train_tasks = len(self.data_train['Y_train'])
@@ -156,7 +156,7 @@ def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True, b
     print_tot(8, 0.5)
     print_tot(8, 1)
 
-    return data_train, data_val, data_test
+    return data_train, data_val, data_test, None
 
 
 def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=False, bias=True):
@@ -262,7 +262,10 @@ def schools_data_gen(n_train_tasks=80, n_val_tasks=20, val_perc=0.5, downsample=
     fill_with_tasks(data_val, task_range_val, test_perc=val_perc)
     fill_with_tasks(data_test, task_range_test, test_perc=val_perc)
 
-    return data_train, data_val, data_test
+    return data_train, data_val, data_test, None
+
+
+#### MULAN DATASETS
 
 
 def load_mulan_data(name, path, n_labels=983, sparse=False, features='nominal', test_set=True, test_size=0.5,
@@ -290,30 +293,25 @@ def load_mulan_data(name, path, n_labels=983, sparse=False, features='nominal', 
                               # you don't need this
                               return_attribute_definitions=False)
 
-    try:
-        data = pickle.load(open(os.path.join(path, name+".p"), "rb"))
+    if test_set:
+        X_train, y_train = inner_load(os.path.join(path, name+"-train.arff"))
+        X_test, y_test = inner_load(os.path.join(path, name+"-test.arff"))
+    else:
+        X, Y = inner_load(os.path.join(path, name+".arff"))
 
-    except:
-        if test_set:
-            X_train, y_train = inner_load(os.path.join(path, name+"-train.arff"))
-            X_test, y_test = inner_load(os.path.join(path, name+"-test.arff"))
-        else:
-            X, Y = inner_load(os.path.join(path, name+".arff"))
+        # remove examples with low number of labels
+        print('y_shape:', Y.shape)
+        print('y_cardinality :', np.sum(Y, axis=1))
 
-            # remove examples with low number of labels
-            print('y_shape:', Y.shape)
-            print('y_cardinality :', np.sum(Y, axis=1))
+        if min_y_cardinality > 0:
+            X = X[np.sum(Y, axis=1) >= min_y_cardinality]
+            Y = Y[np.sum(Y, axis=1) >= min_y_cardinality]
 
-            if min_y_cardinality > 0:
-                X = X[np.sum(Y, axis=1) >= min_y_cardinality]
-                Y = Y[np.sum(Y, axis=1) >= min_y_cardinality]
+        print('X shape :', X.shape)
 
-            print('X shape :', X.shape)
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size)
 
-            X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size)
-
-        data = {'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
-        pickle.dump(data, open(os.path.join(path, name+".p"), "wb"))
+    data = {'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
 
     if issparse(data['X_train']):
         return data['X_train'].toarray(), data['y_train'].toarray(), data['X_test'].toarray(), data['y_test'].toarray()
@@ -321,338 +319,57 @@ def load_mulan_data(name, path, n_labels=983, sparse=False, features='nominal', 
         return data['X_train'], data['y_train'], data['X_test'], data['y_test']
 
 
-def delicious(n_train_tasks=100, n_val_tasks=33, path="data/delicious", balanced=True,
-           add_bias=True, normalization='meanstd', pca_comp=100, min_y_cardinality=0,
-           min_n_per_task=1):
-    try:
-        train = pickle.load(open(os.path.join(path, "delicious_train.p"), "rb"))
-        test = pickle.load(open(os.path.join(path, "delicious_test.p"), "rb"))
+mulan_dict = {'Corel5k': {'n_labels':374, 'features':'nominal', 'test_set': True, 'test_size': 0.5},
+              'CAL500': {'n_labels':174, 'features':'numeric', 'test_set': False, 'test_size': 0.5},
+              'delicious': {'n_labels':983, 'features':'nominal', 'test_set': True, 'test_size': 0.5},
+              'bookmarks': {'n_labels':208, 'features':'nominal', 'test_set': False, 'test_size': 0.5},
+              'bibtex': {'n_labels':159, 'features':'nominal', 'test_set': True, 'test_size': 0.5}
+              }
 
-        data_m = train['x']
-        labels_m = train['y']
-        data_test_m = test['x']
-        labels_test_m = test['y']
-
-    except:
-        X_train, y_train, X_test, y_test = load_mulan_data('delicious', path, n_labels=983,
-                                                           sparse=False, features='nominal',
-                                                           test_set=True,
-                                                           min_y_cardinality=1)
-
-        # data normalization:
-        if normalization=='meanstd':
-            scaler = preprocessing.StandardScaler()
-            X_train = scaler.fit_transform(X_train)
-            X_test = scaler.transform(X_test)
-
-        if pca_comp:
-            pca = PCA(n_components=pca_comp)
-            X_train = pca.fit_transform(X_train)
-            X_test = pca.transform(X_test)
-
-            print('explained variance', pca.explained_variance_ratio_)
-
-        # task with most examples has index 112
-        n_tasks = y_train.shape[1]
-        most_task = np.argmax(np.array([np.sum(y_train[:, i] > 0) for i in range(n_tasks)]))
-        print(most_task)
-
-        def extract_task(i, X, y, bal=balanced, add_b=add_bias):
-            Xi_pos = X[y[:, i] > 0]
-            yi_pos = np.ones(Xi_pos.shape[0])
-
-            Xi_neg = X[y[:, i] < 1] if i == most_task else X[y[:, most_task] > 0] # each label vs the one with most ex
-            #Xi_neg = X[y[:, i] < 1]  # one against all the other lables
-
-            # one against a random label
-            #ol = np.random.randint(0, n_tasks)
-            #while ol == i:
-            #    ol = np.random.randint(0, n_tasks)
-            #Xi_neg = X[y[:, ol] > 0]
-
-            yi_neg = - np.ones(Xi_neg.shape[0])
-            pos_len, neg_len = Xi_pos.shape[0], Xi_neg.shape[0]
-
-            if bal:
-                perm = np.random.permutation(max(neg_len, pos_len))
-                perm = np.array(list(range(max(neg_len, pos_len))))
-                if pos_len < neg_len:
-                    Xi_neg = Xi_neg[perm][:pos_len]
-                    yi_neg = yi_neg[perm][:pos_len]
-                else:
-                    perm = np.random.permutation(pos_len)
-                    Xi_pos = Xi_pos[perm][:neg_len]
-                    yi_pos = yi_pos[perm][:neg_len]
-
-            perm_idx = np.random.permutation(len(yi_neg) + len(yi_pos))
-            Xi = np.concatenate((Xi_pos, Xi_neg), axis=0)[perm_idx]
-            yi = np.concatenate((yi_pos, yi_neg), axis=0)[perm_idx]
-
-            if add_b:
-                n_xi = np.ones((Xi.shape[0], Xi.shape[1] + 1))
-                n_xi[:, 1:] = Xi
-                Xi = n_xi
-
-            return Xi, yi
-
-        # Create the tasks: from multi-labeling to multi-task
-        data_m = []
-        labels_m = []
-        data_test_m = []
-        labels_test_m = []
-        for i in range(n_tasks):
-            Xi_train, yi_train = extract_task(i, X_train, y_train)
-            Xi_test, yi_test = extract_task(i, X_test, y_test)
-
-            if len(yi_train) >= min_n_per_task and len(yi_test) != 0:
-                data_m.append(Xi_train)
-                labels_m.append(yi_train)
-
-                data_test_m.append(Xi_test)
-                labels_test_m.append(yi_test)
-
-                # task statistics:
-                print('task {}, n={}, n_test={},'
-                      ' balance=tr: {:.3f}, ts: {:.3f}'.format(i, len(yi_train), len(yi_test), np.mean(yi_train),
-                                                               np.mean(yi_test)))
-
-        print('effective number of tasks:', len(labels_m), len(labels_test_m))
-
-        pickle.dump({'x': data_m, 'y':labels_m}, open(os.path.join(path, "delicious_train.p"), "wb"))
-        pickle.dump({'x': data_test_m, 'y':labels_test_m}, open(os.path.join(path, "delicious_test.p"), "wb"))
+mulan_settings = {'Corel5k': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
+                              'normalization': 'meanstd', 'pca_comp': None},
+                  'CAL500': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
+                             'normalization': 'meanstd', 'pca_comp': None},
+                  'delicious': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
+                                'normalization': 'meanstd', 'pca_comp': None},
+                  'bookmarks': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
+                                'normalization': 'meanstd', 'pca_comp': None},
+                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsmaxn_rand',
+                                'normalization': 'meanstd', 'pca_comp': None}
+                  }
 
 
-    data_analysis = False
-    n_tasks = len(labels_m)
-    if data_analysis:
-        print('X_train values')
-
-        for i in range(n_tasks):
-            print('task', i, 'mean y train, test ', np.mean(labels_m[i]), np.mean(labels_test_m[i]))
-
-        for i in range(len(data_m[0][0])):
-            ith_feat = np.concatenate([data_m[t][:, i] for t in range(n_tasks)], axis=0)
-            print('feature {}: mean {:.3f}, std {:.3f}, max {:.3f}, min {:.3f}'.format(i, np.mean(ith_feat),
-                                                                                       np.std(ith_feat), np.max(ith_feat),
-                                                                                       np.min(ith_feat)))
+def get_mulan_loader(data_name, **kwargs):
+    def mulan_loader(**kwargs):
+        return mulan(data_name=data_name, **mulan_dict[data_name], **kwargs)
+    return mulan_loader
 
 
+def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=0.5,
+          n_train_tasks=200, n_val_tasks=73, parent_path="data", balanced=True, add_bias=True,
+          multi_transform='onevsmaxn_rand', normalization='meanstd', pca_comp=None, min_y_cardinality=0,
+          min_n_per_task=1, data_analisys=True):
 
-    print()
+    desc = 'ts'+str(test_size)+'bal'+str(balanced)+'bias'+str(add_bias)+'mt'+multi_transform+'norm' \
+            +normalization+'pca_c'+str(pca_comp)+'miny'+str(min_y_cardinality)+'mnpt'+str(min_n_per_task)
+    path = os.path.join(parent_path, data_name)
+    dataset_file_path = os.path.join(parent_path, data_name, data_name + desc + "_multitask.p")
 
-    task_shuffled = np.random.permutation(n_tasks)
-    task_range_tr = task_shuffled[0:n_train_tasks]
-    task_range_val = task_shuffled[n_train_tasks:n_train_tasks+n_val_tasks]
-    task_range_test = task_shuffled[n_train_tasks+n_val_tasks:]
+    if os.path.isfile(dataset_file_path):
+        print('load already made meta-dataset')
+        dataset_dict = pickle.load(open(dataset_file_path, "rb"))
+        train, test = dataset_dict['train'], dataset_dict['test']
+        data_m, labels_m , data_test_m, labels_test_m = train['x'], train['y'], test['x'], test['y']
 
-    data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
-    data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
-    data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
-
-    def fill_with_tasks(data, task_range, data_m, labels_m, data_test_m, labels_test_m):
-        for task_idx in task_range:
-            es = np.random.permutation(len(labels_m[task_idx]))
-
-
-            X_train, Y_train = data_m[task_idx][es], labels_m[task_idx][es]
-            X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
-
-
-            Y_train = Y_train.ravel()
-            X_train = X_train
-            X_val = []
-            Y_val = []
-
-            data['X_train'].append(X_train)
-            data['X_val'].append(X_val)
-            data['X_test'].append(X_test)
-            data['Y_train'].append(Y_train)
-            data['Y_val'].append(Y_val)
-            data['Y_test'].append(Y_test)
-
-    # make training, validation and test tasks:
-    fill_with_tasks(data_train, task_range_tr, data_m, labels_m, data_test_m, labels_test_m)
-    fill_with_tasks(data_val, task_range_val, data_m, labels_m,  data_test_m, labels_test_m)
-    fill_with_tasks(data_test, task_range_test, data_m, labels_m, data_test_m, labels_test_m)
-
-    return data_train, data_val, data_test
-
-
-def cal500(n_train_tasks=100, n_val_tasks=33, path="data/CAL500", balanced=True,
-           add_bias=True, normalization='meanstd', pca_comp=50, min_y_cardinality=10,
-           min_n_per_task=1):
-    try:
-        train = pickle.load(open(os.path.join(path, "CAL500_train.p"), "rb"))
-        test = pickle.load(open(os.path.join(path, "CAL500_test.p"), "rb"))
-
-        data_m = train['x']
-        labels_m = train['y']
-        data_test_m = test['x']
-        labels_test_m = test['y']
-
-    except:
-        X_train, y_train, X_test, y_test = load_mulan_data('CAL500', path, n_labels=174,
-                                                           sparse=False, features='numeric',
-                                                           test_set=False, test_size=0.5,
-                                                           min_y_cardinality=0)
+    else:
+        print('create meta-dataset from scratch')
+        X_train, y_train, X_test, y_test = load_mulan_data(data_name, path, n_labels=n_labels,
+                                                           sparse=False, features=features,
+                                                           test_set=test_set, test_size=test_size,
+                                                           min_y_cardinality=min_y_cardinality)
 
         # data normalization:
-        if normalization=='meanstd':
-            scaler = preprocessing.StandardScaler()
-            X_train = scaler.fit_transform(X_train)
-            X_test = scaler.transform(X_test)
-
-        if pca_comp:
-            pca = PCA(n_components=pca_comp)
-            X_train = pca.fit_transform(X_train)
-            X_test = pca.transform(X_test)
-
-            print('explained variance', pca.explained_variance_ratio_)
-
-        # task with most examples has index 112
-        n_tasks = y_train.shape[1]
-        most_task = 112
-
-        def extract_task(i, X, y, bal=balanced, add_b=add_bias):
-            Xi_pos = X[y[:, i] > 0]
-            yi_pos = np.ones(Xi_pos.shape[0])
-
-            Xi_neg = X[y[:, i] < 1] if i == most_task else X[y[:, most_task] > 0] # each label vs the one with most ex
-            #Xi_neg = X[y[:, i] < 1]  # one against all the other lables
-
-            # one against a random label
-            #ol = np.random.randint(0, n_tasks)
-            #while ol == i:
-            #    ol = np.random.randint(0, n_tasks)
-            #Xi_neg = X[y[:, ol] > 0]
-
-            yi_neg = - np.ones(Xi_neg.shape[0])
-            pos_len, neg_len = Xi_pos.shape[0], Xi_neg.shape[0]
-
-            if bal:
-                perm = np.random.permutation(max(neg_len, pos_len))
-                #perm = np.array(list(range(max(neg_len, pos_len))))
-                if pos_len < neg_len:
-                    Xi_neg = Xi_neg[perm][:pos_len]
-                    yi_neg = yi_neg[perm][:pos_len]
-                else:
-                    perm = np.random.permutation(pos_len)
-                    Xi_pos = Xi_pos[perm][:neg_len]
-                    yi_pos = yi_pos[perm][:neg_len]
-
-            perm_idx = np.random.permutation(len(yi_neg) + len(yi_pos))
-            Xi = np.concatenate((Xi_pos, Xi_neg), axis=0)[perm_idx]
-            yi = np.concatenate((yi_pos, yi_neg), axis=0)[perm_idx]
-
-            if add_b:
-                n_xi = np.ones((Xi.shape[0], Xi.shape[1] + 1))
-                n_xi[:, 1:] = Xi
-                Xi = n_xi
-
-            return Xi, yi
-
-        # Create the tasks: from multi-labeling to multi-task
-        data_m = []
-        labels_m = []
-        data_test_m = []
-        labels_test_m = []
-        for i in range(n_tasks):
-            Xi_train, yi_train = extract_task(i, X_train, y_train)
-            Xi_test, yi_test = extract_task(i, X_test, y_test)
-
-            if len(yi_train) >= min_n_per_task and len(yi_test) != 0:
-                data_m.append(Xi_train)
-                labels_m.append(yi_train)
-
-                data_test_m.append(Xi_test)
-                labels_test_m.append(yi_test)
-
-                # task statistics:
-                print('task {}, n={}, n_test={},'
-                      ' balance=tr: {:.3f}, ts: {:.3f}'.format(i, len(yi_train), len(yi_test), np.mean(yi_train),
-                                                               np.mean(yi_test)))
-
-        print('effective number of tasks:', len(labels_m), len(labels_test_m))
-
-        pickle.dump({'x': data_m, 'y':labels_m}, open(os.path.join(path, "CAL500_train.p"), "wb"))
-        pickle.dump({'x': data_test_m, 'y':labels_test_m}, open(os.path.join(path, "CAL500_test.p"), "wb"))
-
-
-    #data analysis
-    n_tasks = len(labels_m)
-    print('X_train values')
-
-    for i in range(n_tasks):
-        print('task', i, 'mean y train, test ', np.mean(labels_m[i]), np.mean(labels_test_m[i]))
-
-    for i in range(len(data_m[0][0])):
-        ith_feat = np.concatenate([data_m[t][:, i] for t in range(n_tasks)], axis=0)
-        print('feature {}: mean {:.3f}, std {:.3f}, max {:.3f}, min {:.3f}'.format(i, np.mean(ith_feat),
-                                                                                   np.std(ith_feat), np.max(ith_feat),
-                                                                                   np.min(ith_feat)))
-
-
-
-    print()
-
-    task_shuffled = np.random.permutation(n_tasks)
-    task_range_tr = task_shuffled[0:n_train_tasks]
-    task_range_val = task_shuffled[n_train_tasks:n_train_tasks+n_val_tasks]
-    task_range_test = task_shuffled[n_train_tasks+n_val_tasks:]
-
-    data_train = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
-    data_val = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
-    data_test = {'X_train': [], 'Y_train': [], 'X_val': [], 'Y_val': [], 'X_test': [], 'Y_test': []}
-
-    def fill_with_tasks(data, task_range, data_m, labels_m, data_test_m, labels_test_m):
-        for task_idx in task_range:
-            es = np.random.permutation(len(labels_m[task_idx]))
-
-
-            X_train, Y_train = data_m[task_idx][es], labels_m[task_idx][es]
-            X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
-
-
-            Y_train = Y_train.ravel()
-            X_train = X_train
-            X_val = []
-            Y_val = []
-
-            data['X_train'].append(X_train)
-            data['X_val'].append(X_val)
-            data['X_test'].append(X_test)
-            data['Y_train'].append(Y_train)
-            data['Y_val'].append(Y_val)
-            data['Y_test'].append(Y_test)
-
-    # make training, validation and test tasks:
-    fill_with_tasks(data_train, task_range_tr, data_m, labels_m, data_test_m, labels_test_m)
-    fill_with_tasks(data_val, task_range_val, data_m, labels_m,  data_test_m, labels_test_m)
-    fill_with_tasks(data_test, task_range_test, data_m, labels_m, data_test_m, labels_test_m)
-
-    return data_train, data_val, data_test
-
-
-def corel5k(n_train_tasks=100, n_val_tasks=33, path="data/corel5k", balanced=True,
-           add_bias=True, normalization='meanstd', pca_comp=None, min_y_cardinality=10,
-           min_n_per_task=1):
-    try:
-        train = pickle.load(open(os.path.join(path, "corel5k_train.p"), "rb"))
-        test = pickle.load(open(os.path.join(path, "corel5k_test.p"), "rb"))
-
-        data_m = train['x']
-        labels_m = train['y']
-        data_test_m = test['x']
-        labels_test_m = test['y']
-
-    except:
-        X_train, y_train, X_test, y_test = load_mulan_data('corel5k', path, n_labels=374,
-                                                           sparse=False, features='nominal',
-                                                           test_set=True, test_size=0.5,
-                                                           min_y_cardinality=0)
-
-        # data normalization:
-        if normalization=='meanstd':
+        if normalization == 'meanstd':
             scaler = preprocessing.StandardScaler()
         elif normalization == 'to[-1,1]':
             scaler = preprocessing.MinMaxScaler(feature_range=(-1,1))
@@ -681,21 +398,28 @@ def corel5k(n_train_tasks=100, n_val_tasks=33, path="data/corel5k", balanced=Tru
             Xi_pos = X[y[:, i] > 0]
             yi_pos = np.ones(Xi_pos.shape[0])
 
-            Xi_neg = X[y[:, i] < 1] if i == most_task else X[y[:, most_task] > 0] # each label vs the one with most ex
-            #Xi_neg = X[y[:, i] < 1]  # one against all the other lables
-
-            # one against a random label
-            #ol = np.random.randint(0, n_tasks)
-            #while ol == i:
-            #    ol = np.random.randint(0, n_tasks)
-            #Xi_neg = X[y[:, ol] > 0]
+            if 'onevsmaxn' in multi_transform:
+                Xi_neg = X[y[:, i] < 1] if i == most_task else X[y[:, most_task] > 0]
+            elif 'onevsall' in multi_transform:
+                Xi_neg = X[y[:, i] < 1]  # one against all the other lables
+            elif 'onevsrandom' in multi_transform:
+                # one against a random label
+                ol = np.random.randint(0, n_tasks)
+                while ol == i:
+                   ol = np.random.randint(0, n_tasks)
+                Xi_neg = X[y[:, ol] > 0]
+            else:
+                raise ValueError('multitransform', multi_transform, 'not defined!')
 
             yi_neg = - np.ones(Xi_neg.shape[0])
             pos_len, neg_len = Xi_pos.shape[0], Xi_neg.shape[0]
 
-            if bal:
+            if '_rand' in multi_transform:
                 perm = np.random.permutation(max(neg_len, pos_len))
-                #perm = np.array(list(range(max(neg_len, pos_len))))
+            else:
+                perm = np.array(list(range(max(neg_len, pos_len))))
+
+            if bal:
                 if pos_len < neg_len:
                     Xi_neg = Xi_neg[perm][:pos_len]
                     yi_neg = yi_neg[perm][:pos_len]
@@ -716,10 +440,7 @@ def corel5k(n_train_tasks=100, n_val_tasks=33, path="data/corel5k", balanced=Tru
             return Xi, yi
 
         # Create the tasks: from multi-labeling to multi-task
-        data_m = []
-        labels_m = []
-        data_test_m = []
-        labels_test_m = []
+        data_m, labels_m, labels_test_m, data_test_m = [], [], [], []
         for i in range(n_tasks):
             Xi_train, yi_train = extract_task(i, X_train, y_train)
             Xi_test, yi_test = extract_task(i, X_test, y_test)
@@ -736,28 +457,22 @@ def corel5k(n_train_tasks=100, n_val_tasks=33, path="data/corel5k", balanced=Tru
                       ' balance=tr: {:.3f}, ts: {:.3f}'.format(i, len(yi_train), len(yi_test), np.mean(yi_train),
                                                                np.mean(yi_test)))
 
-        print('effective number of tasks:', len(labels_m), len(labels_test_m))
+        dataset_dict = {'train':{'x': data_m, 'y':labels_m}, 'test': {'x': data_test_m, 'y':labels_test_m}}
+        pickle.dump(dataset_dict, open(dataset_file_path, "wb"))
 
-        pickle.dump({'x': data_m, 'y':labels_m}, open(os.path.join(path, "corel5k_train.p"), "wb"))
-        pickle.dump({'x': data_test_m, 'y':labels_test_m}, open(os.path.join(path, "corel5k_test.p"), "wb"))
-
-
-    #data analysis
     n_tasks = len(labels_m)
-    print('X_train values')
+    print('Number of tasks:', len(labels_m), len(labels_test_m))
 
-    for i in range(n_tasks):
-        print('task', i, 'mean y train, test ', np.mean(labels_m[i]), np.mean(labels_test_m[i]))
+    if data_analisys:
+        print('X_train values')
 
-    for i in range(len(data_m[0][0])):
-        ith_feat = np.concatenate([data_m[t][:, i] for t in range(n_tasks)], axis=0)
-        print('feature {}: mean {:.3f}, std {:.3f}, max {:.3f}, min {:.3f}'.format(i, np.mean(ith_feat),
-                                                                                   np.std(ith_feat), np.max(ith_feat),
-                                                                                   np.min(ith_feat)))
+        for i in range(n_tasks):
+            print('task', i, 'mean y train, test ', np.mean(labels_m[i]), np.mean(labels_test_m[i]))
 
-
-
-    print()
+        for i in range(len(data_m[0][0])):
+            ith_feat = np.concatenate([data_m[t][:, i] for t in range(n_tasks)], axis=0)
+            print('feature {}: mean {:.3f}, std {:.3f}, max {:.3f},'
+                  ' min {:.3f}'.format(i, np.mean(ith_feat), np.std(ith_feat), np.max(ith_feat), np.min(ith_feat)))
 
     task_shuffled = np.random.permutation(n_tasks)
     task_range_tr = task_shuffled[0:n_train_tasks]
@@ -772,10 +487,8 @@ def corel5k(n_train_tasks=100, n_val_tasks=33, path="data/corel5k", balanced=Tru
         for task_idx in task_range:
             es = np.random.permutation(len(labels_m[task_idx]))
 
-
             X_train, Y_train = data_m[task_idx][es], labels_m[task_idx][es]
             X_test, Y_test = data_test_m[task_idx], labels_test_m[task_idx]
-
 
             Y_train = Y_train.ravel()
             X_train = X_train
@@ -794,26 +507,9 @@ def corel5k(n_train_tasks=100, n_val_tasks=33, path="data/corel5k", balanced=Tru
     fill_with_tasks(data_val, task_range_val, data_m, labels_m,  data_test_m, labels_test_m)
     fill_with_tasks(data_test, task_range_test, data_m, labels_m, data_test_m, labels_test_m)
 
-    return data_train, data_val, data_test
-
-
-def schools_data_gen2(n_train_tasks=80, n_val_tasks=39, val_perc=0.5):
-
-    n_tasks = 139
-
-    task_shuffled = np.random.permutation(n_tasks)
-
-    task_range_tr = task_shuffled[0:n_train_tasks]
-    task_range_val = task_shuffled[n_train_tasks:n_train_tasks + n_val_tasks]
-    task_range_test = task_shuffled[(n_train_tasks + n_val_tasks):]
-
-    temp1 = sio.loadmat('school2/school_b.mat')
-    temp2 = sio.loadmat('school2/school_1_indexes.mat')
+    return data_train, data_val, data_test, desc
 
 
 if __name__ == '__main__':
-    #delicious(path='delicious')
-    corel5k(path='corel5k')
-
-    #cal500(path='CAL500')
-    #print(schools_data_gen())
+    data_name = 'bibtex'
+    get_mulan_loader(data_name)(parent_path='')

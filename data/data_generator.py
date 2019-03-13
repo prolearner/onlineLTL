@@ -14,6 +14,7 @@ class TasksGenerator:
         self.n_test = n_test
         self.y_snr = y_snr
         self.task_std = task_std
+        self.desc = "None"
 
         self.y_dist = None
 

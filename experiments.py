@@ -76,9 +76,14 @@ def exp(exp_str = 'exp1', seed=0, lambdas = np.logspace(-6, 3, num=10), alphas =
     exp_dir_path = make_exp_dir(os.path.join(exp_dir, exp_name))
     save_exp_parameters(exp_parameters, exp_dir_path)
 
+    with open(os.path.join(exp_dir_path, tasks_gen.desc+".txt"), "w") as text_file:
+        text_file.write(tasks_gen.desc)
+
     data_train, oracle_train = tasks_gen(n_tasks=n_tasks, n_train=n_train, n_test=n_test, sel='train')
     data_valid, oracle_valid = tasks_gen(n_tasks=n_tasks_val, n_train=n_train, n_test=n_test, sel='val')
     data_test, oracle_test = tasks_gen(n_tasks=n_tasks_test, n_train=n_train, n_test=n_test, sel='test')
+
+
 
     res_dict = {}
     for ts in inner_solver_test_str:
@@ -172,32 +177,11 @@ def lenk_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=30), a
                  save_res=save_res, verbose=verbose)
 
 
-def delicious_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=10), alphas=np.logspace(-3, 3, num=10),
-                 n_train=None, gamma=None, n_processes=30, n_tasks=500, n_val_tasks=183, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd'),
-                 use_hyper_bounds=False, inner_solver_test_str=('ssubgd'), show_plot=True, save_res=True, verbose=1):
-
-    return multi_seed(exp_str='delicious', seeds=seeds, lambdas=lambdas, alphas=alphas,
-                 gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=n_train, n_dims=0,
-                 n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
-                 use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
-                 save_res=save_res, verbose=verbose)
-
-
-def cal500_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=5), alphas=np.logspace(-3, 3, num=5),
-                 n_train=None, gamma=None, n_processes=30, n_tasks=100, n_val_tasks=31, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd'),
-                 use_hyper_bounds=False, inner_solver_test_str=('ssubgd'), show_plot=True, save_res=True, verbose=1):
-
-    return multi_seed(exp_str='cal500', seeds=seeds, lambdas=lambdas, alphas=alphas,
-                 gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=n_train, n_dims=0,
-                 n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
-                 use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
-                 save_res=save_res, verbose=verbose)
-
-def corel5k_multi_seed(seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=5), alphas=np.logspace(-3, 3, num=5),
+def mulan_multi_seed(data_name='Corel5k', seeds=list(range(10)), lambdas=np.logspace(-3, 3, num=5), alphas=np.logspace(-3, 3, num=5),
                  n_train=None, gamma=None, n_processes=30, n_tasks=200, n_val_tasks=73, exp_dir=EXP_FOLDER, inner_solver_str=('ssubgd'),
                  use_hyper_bounds=False, inner_solver_test_str=('ssubgd'), show_plot=True, save_res=True, verbose=1):
 
-    return multi_seed(exp_str='corel5k', seeds=seeds, lambdas=lambdas, alphas=alphas,
+    return multi_seed(exp_str=data_name, seeds=seeds, lambdas=lambdas, alphas=alphas,
                  gamma=gamma, n_processes=n_processes, w_bar=0, y_snr=0, task_std=0, n_tasks=n_tasks, n_train=n_train, n_dims=0,
                  n_tasks_test=n_val_tasks, n_test=0, exp_dir=exp_dir, inner_solver_str=inner_solver_str,
                  use_hyper_bounds=use_hyper_bounds, inner_solver_test_str=inner_solver_test_str, show_plot=show_plot,
@@ -263,33 +247,14 @@ def select_exp(exp_str, seed=0, task_std=1, y_snr=10, val_perc=0.5, w_bar=4, n_d
         loss = AbsoluteLoss
         val_metric = 'loss'
         metric_dict = {}
-    elif exp_str == 'delicious':
-        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.delicious,
+    elif exp_str in data_load.mulan_dict.keys():
+        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.get_mulan_loader(exp_str),
                                                    seed=seed, n_train_tasks=n_train_tasks,
                                                    n_val_tasks=n_val_tasks,
                                                    val_perc=val_perc)
-        exp_name = 'expDeli' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
-                   + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
-        loss = HingeLoss
-        val_metric = 'loss'
-        metric_dict = {'accuracy': accuracy}
-    elif exp_str == 'cal500':
-        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.cal500,
-                                                   seed=seed, n_train_tasks=n_train_tasks,
-                                                   n_val_tasks=n_val_tasks,
-                                                   val_perc=val_perc)
-        exp_name = 'expCal500' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
-                   + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
-        loss = HingeLoss
-        val_metric = 'loss'
-        metric_dict = {'accuracy': accuracy}
-    elif exp_str == 'corel5k':
-        tasks_gen = data_load.RealDatasetGenerator(gen_f=data_load.corel5k,
-                                                   seed=seed, n_train_tasks=n_train_tasks,
-                                                   n_val_tasks=n_val_tasks,
-                                                   val_perc=val_perc)
-        exp_name = 'corel5k' + 'n_tasks_train' + str(n_train_tasks) + 'n_tasks_val' + str(n_val_tasks) \
-                   + 'n_tasks' + str(tasks_gen.n_tasks) + 'dim' + str(tasks_gen.n_dims)
+        exp_name = 'exp' + exp_str + 'n_tasks-tot-tr-val-tst' + str(tasks_gen.n_tasks) + '-' + str(tasks_gen.n_train_tasks) \
+                   + '-' + str(tasks_gen.n_val_tasks) + '-' + str(tasks_gen.n_test_tasks) \
+                   + 'dim' + str(tasks_gen.n_dims)
         loss = HingeLoss
         val_metric = 'loss'
         metric_dict = {'accuracy': accuracy}
