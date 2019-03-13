@@ -322,7 +322,7 @@ def load_mulan_data(name, path, n_labels=983, sparse=False, features='nominal', 
 
 
 def delicious(n_train_tasks=100, n_val_tasks=33, path="data/delicious", balanced=True,
-           add_bias=True, normalization='meanstd', pca_comp=None, min_y_cardinality=0,
+           add_bias=True, normalization='meanstd', pca_comp=100, min_y_cardinality=0,
            min_n_per_task=1):
     try:
         train = pickle.load(open(os.path.join(path, "delicious_train.p"), "rb"))
@@ -479,7 +479,7 @@ def delicious(n_train_tasks=100, n_val_tasks=33, path="data/delicious", balanced
 
 
 def cal500(n_train_tasks=100, n_val_tasks=33, path="data/CAL500", balanced=True,
-           add_bias=True, normalization='meanstd', pca_comp=None, min_y_cardinality=10,
+           add_bias=True, normalization='meanstd', pca_comp=50, min_y_cardinality=10,
            min_n_per_task=1):
     try:
         train = pickle.load(open(os.path.join(path, "CAL500_train.p"), "rb"))
@@ -494,7 +494,7 @@ def cal500(n_train_tasks=100, n_val_tasks=33, path="data/CAL500", balanced=True,
         X_train, y_train, X_test, y_test = load_mulan_data('CAL500', path, n_labels=174,
                                                            sparse=False, features='numeric',
                                                            test_set=False, test_size=0.5,
-                                                           min_y_cardinality=1)
+                                                           min_y_cardinality=0)
 
         # data normalization:
         if normalization=='meanstd':
@@ -512,8 +512,6 @@ def cal500(n_train_tasks=100, n_val_tasks=33, path="data/CAL500", balanced=True,
         # task with most examples has index 112
         n_tasks = y_train.shape[1]
         most_task= 112
-
-
 
         def extract_task(i, X, y, bal=balanced, add_b=add_bias):
             Xi_pos = X[y[:, i] > 0]

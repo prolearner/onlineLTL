@@ -23,7 +23,7 @@ def exp_cal():
 def exp_cal_itl():
     exp_itl_only(seed=0, exp_str='cal500', inner_solver_test_str=['ssubgd'],
                  lambdas=np.logspace(-6, 6, 20),
-                 verbose=3, n_tasks=90, n_tasks_test=40, n_train=50, gamma=None, n_processes=n_processes)
+                 verbose=3, n_tasks=90, n_tasks_test=40, n_train=None, gamma=None, n_processes=n_processes)
 
 #lenk_meta_val(reg=False, lambdas=1.9, alphas=0.6, inner_solver_test_str='ssubgd', inner_solver_str=['ssubgd'])
 #exp_len()

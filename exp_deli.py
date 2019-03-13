@@ -25,7 +25,7 @@ def exp_del():  # 8 train example were used in Argiryu et al. 2007
 def exp_del_itl():
     exp_itl_only(seed=0, exp_str='delicious', inner_solver_test_str=['ssubgd'],
                  lambdas=[3],
-                 verbose=5, n_tasks=500, n_tasks_test=200, n_train=50, gamma=None, n_processes=n_processes)
+                 verbose=5, n_tasks=500, n_tasks_test=200, n_train=20, gamma=None, n_processes=n_processes)
 
 #lenk_meta_val(reg=False, lambdas=1.9, alphas=0.6, inner_solver_test_str='ssubgd', inner_solver_str=['ssubgd'])
 #exp_len()
