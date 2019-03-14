@@ -336,7 +336,7 @@ mulan_settings = {'Corel5k': {'balanced':True, 'add_bias':True, 'multi_transform
                   'bookmarks': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'meanstd', 'pca_comp': None},
                   'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsmaxn_rand',
-                                'normalization': 'none', 'pca_comp': None}
+                                'normalization': 'none', 'pca_comp': None, 'perc': 1}
                   }
 
 
@@ -349,10 +349,12 @@ def get_mulan_loader(data_name, **kwargs):
 def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=0.5,
           n_train_tasks=200, n_val_tasks=73, parent_path="data", balanced=True, add_bias=True,
           multi_transform='onevsmaxn_rand', normalization='meanstd', pca_comp=None, min_y_cardinality=0,
-          min_n_per_task=1, data_analisys=False):
+          min_n_per_task=1, perc=1, data_analisys=True):
 
     desc = 'ts'+str(test_size)+'bal'+str(balanced)+'bias'+str(add_bias)+'mt'+multi_transform+'norm' \
-            +normalization+'pca_c'+str(pca_comp)+'miny'+str(min_y_cardinality)+'mnpt'+str(min_n_per_task)
+            +normalization+'pca_c'+str(pca_comp)+'miny'+str(min_y_cardinality)+'mnpt'+str(min_n_per_task) \
+            +'perc'+str(perc)
+
     path = os.path.join(parent_path, data_name)
     dataset_file_path = os.path.join(parent_path, data_name, data_name + desc + "_multitask.p")
 
@@ -427,7 +429,6 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
                 perm = np.array(list(range(max(neg_len, pos_len))))
 
             # reduce test set to make less duplicates:
-            perc = 0.05
             n_ret = min(neg_len, pos_len) if is_train else round(min(neg_len, pos_len)*perc)
 
             if bal:
@@ -489,6 +490,7 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
         example_count = 0
         unique_count = 0
         unique = []
+        overlap = 0
         for i in range(n_tasks):
             print('task', i, 'mean y train, test, n examples train, test ',
                   np.mean(labels_m[i]), np.mean(labels_test_m[i]), len(labels_m[i]), len(labels_test_m[i]))
@@ -508,9 +510,10 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
                 if not is_present:
                     unique_count+=1
                     unique.append([e, y])
-            print('nd, pd, ec, uc, rt', nd_count, pd_count, example_count, unique_count, unique_count/example_count)
 
-
+            overlap = unique_count/example_count
+            print('nd, pd, ec, uc, rt', nd_count, pd_count, example_count, unique_count, overlap)
+        desc = desc+'ov'+str(overlap)
 
         for i in range(len(data_m[0][0])):
             ith_feat = np.concatenate([data_m[t][:, i] for t in range(n_tasks)], axis=0)
