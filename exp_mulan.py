@@ -25,8 +25,8 @@ mulan_dict = {'Corel5k': {'n_tasks':100, 'n_val_tasks': 100, 'n_train': 20},
 def exp():
     for n in [5, 10, 20, 100]:
         mulan_multi_seed(data_name=dataset_name, seeds=list(range(10)),lambdas=np.logspace(-3, 3, num=5),
-                             alphas=np.logspace(-3, 3, num=5), inner_solver_str=['ssubgd', 'fista'],
-                             inner_solver_test_str=['ssubgd', 'fista'], n_train=n,
+                             alphas=np.logspace(-3, 3, num=5), inner_solver_str=['ssubgd'],
+                             inner_solver_test_str=['ssubgd', 'noopt'], n_train=n,
                              n_processes=n_processes, **mulan_dict[dataset_name])
 
 
