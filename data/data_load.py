@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 import pickle
 import os
 from sklearn.decomposition import PCA
+import math
 
 
 class RealDatasetGenerator:
@@ -397,7 +398,7 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
         most_task_n = np.max(np.array([np.sum(y_train[:, i] > 0) for i in range(n_tasks)]))
         print('the task {} has the max number of examples: {}'.format(most_task, most_task_n))
 
-        def extract_task(i, X, y, bal=balanced, add_b=add_bias):
+        def extract_task(i, X, y, bal=balanced, add_b=add_bias, is_train=True):
             Xi_pos = X[y[:, i] > 0]
             yi_pos = np.ones(Xi_pos.shape[0])
 
@@ -425,14 +426,19 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
             else:
                 perm = np.array(list(range(max(neg_len, pos_len))))
 
+            # reduce test set to make less duplicates:
+            perc = 0.05
+            n_ret = min(neg_len, pos_len) if is_train else round(min(neg_len, pos_len)*perc)
+
             if bal:
                 if pos_len < neg_len:
-                    Xi_neg = Xi_neg[perm][:pos_len]
-                    yi_neg = yi_neg[perm][:pos_len]
+                    Xi_neg = Xi_neg[perm][:n_ret]
+                    yi_neg = yi_neg[perm][:n_ret]
                 else:
                     perm = np.random.permutation(pos_len)
-                    Xi_pos = Xi_pos[perm][:neg_len]
-                    yi_pos = yi_pos[perm][:neg_len]
+                    Xi_pos = Xi_pos[perm][:n_ret]
+                    yi_pos = yi_pos[perm][:n_ret]
+
 
             perm_idx = np.random.permutation(len(yi_neg) + len(yi_pos))
             Xi = np.concatenate((Xi_pos, Xi_neg), axis=0)[perm_idx]
@@ -451,7 +457,7 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
         max_size = 0
         for i in range(n_tasks):
             Xi_train, yi_train = extract_task(i, X_train, y_train)
-            Xi_test, yi_test = extract_task(i, X_test, y_test)
+            Xi_test, yi_test = extract_task(i, X_test, y_test, is_train=False)
 
             if Xi_train is not None and len(yi_train) >= min_n_per_task and len(yi_test) != 0:
                 data_m.append(Xi_train)
@@ -478,8 +484,33 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
     if data_analisys:
         print('X_train values')
 
+        nd_count=0
+        pd_count=0
+        example_count = 0
+        unique_count = 0
+        unique = []
         for i in range(n_tasks):
-            print('task', i, 'mean y train, test ', np.mean(labels_m[i]), np.mean(labels_test_m[i]))
+            print('task', i, 'mean y train, test, n examples train, test ',
+                  np.mean(labels_m[i]), np.mean(labels_test_m[i]), len(labels_m[i]), len(labels_test_m[i]))
+
+            # negative duplicates:
+
+            for e, y in zip(data_test_m[i], labels_test_m[i]):
+                is_present = False
+                example_count+=1
+                for ec, yc in unique:
+                    if np.all(e == ec) and y == yc:
+                        is_present=True
+                        if y > 0:
+                            pd_count+=1
+                        else:
+                            nd_count+=1
+                if not is_present:
+                    unique_count+=1
+                    unique.append([e, y])
+            print('nd, pd, ec, uc, rt', nd_count, pd_count, example_count, unique_count, unique_count/example_count)
+
+
 
         for i in range(len(data_m[0][0])):
             ith_feat = np.concatenate([data_m[t][:, i] for t in range(n_tasks)], axis=0)
