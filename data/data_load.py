@@ -319,22 +319,22 @@ def load_mulan_data(name, path, n_labels=983, sparse=False, features='nominal', 
         return data['X_train'], data['y_train'], data['X_test'], data['y_test']
 
 
-mulan_dict = {'Corel5k': {'n_labels':374, 'features':'nominal', 'test_set': True, 'test_size': 0.5},
-              'CAL500': {'n_labels':174, 'features':'numeric', 'test_set': False, 'test_size': 0.5},
-              'delicious': {'n_labels':983, 'features':'nominal', 'test_set': True, 'test_size': 0.5},
-              'bookmarks': {'n_labels':208, 'features':'nominal', 'test_set': False, 'test_size': 0.5},
-              'bibtex': {'n_labels':159, 'features':'nominal', 'test_set': True, 'test_size': 0.5}
+mulan_dict = {'Corel5k':   {'n_labels': 374, 'features': 'nominal', 'test_set': True,  'test_size': 0.5},
+              'CAL500':    {'n_labels': 174, 'features': 'numeric', 'test_set': False, 'test_size': 0.5},
+              'delicious': {'n_labels': 983, 'features': 'nominal', 'test_set': True,  'test_size': 0.5},
+              'bookmarks': {'n_labels': 208, 'features': 'nominal', 'test_set': False, 'test_size': 0.5},
+              'bibtex':    {'n_labels': 159, 'features': 'nominal', 'test_set': True,  'test_size': 0.5}
               }
 
 mulan_settings = {'Corel5k': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
                               'normalization': 'meanstd', 'pca_comp': None},
                   'CAL500': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
-                             'normalization': 'meanstd', 'pca_comp': None},
+                             'normalization': 'l2', 'pca_comp': None},
                   'delicious': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
-                                'normalization': 'meanstd', 'pca_comp': None},
+                                'normalization': 'l2', 'pca_comp': None},
                   'bookmarks': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'meanstd', 'pca_comp': None},
-                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsmaxn_rand',
+                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsall_rand',
                                 'normalization': 'none', 'pca_comp': None}
                   }
 
@@ -373,6 +373,8 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
             scaler = preprocessing.StandardScaler()
         elif normalization == 'to[-1,1]':
             scaler = preprocessing.MinMaxScaler(feature_range=(-1,1))
+        elif normalization == 'l2':
+            scaler = preprocessing.Normalizer()
         elif normalization == 'none':
             scaler = None
         else:
@@ -467,7 +469,7 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
                       ' balance=tr: {:.3f}, ts: {:.3f}'.format(i, len(yi_train), len(yi_test), np.mean(yi_train),
                                                                np.mean(yi_test)))
         print('tasks min/max size', min_size, max_size)
-        dataset_dict = {'train':{'x': data_m, 'y':labels_m}, 'test': {'x': data_test_m, 'y':labels_test_m}}
+        dataset_dict = {'train': {'x': data_m, 'y':labels_m}, 'test': {'x': data_test_m, 'y':labels_test_m}}
         pickle.dump(dataset_dict, open(dataset_file_path, "wb"))
 
     n_tasks = len(labels_m)
@@ -521,5 +523,5 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
 
 
 if __name__ == '__main__':
-    data_name = 'bibtex'
+    data_name = 'CAL500'
     get_mulan_loader(data_name)(parent_path='')
