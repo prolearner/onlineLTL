@@ -334,7 +334,7 @@ mulan_settings = {'Corel5k': {'balanced':True, 'add_bias':True, 'multi_transform
                                 'normalization': 'l2', 'pca_comp': None},
                   'bookmarks': {'balanced':True, 'add_bias':True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'meanstd', 'pca_comp': None},
-                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsall_rand',
+                  'bibtex': {'balanced': True, 'add_bias': True, 'multi_transform': 'onevsmaxn_rand',
                                 'normalization': 'none', 'pca_comp': None}
                   }
 
@@ -523,5 +523,5 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
 
 
 if __name__ == '__main__':
-    data_name = 'CAL500'
+    data_name = 'bibtex'
     get_mulan_loader(data_name)(parent_path='')
