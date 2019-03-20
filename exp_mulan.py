@@ -37,4 +37,13 @@ def exp_itl():
                  lambdas=np.logspace(-3, 3, num=5),
                  verbose=5, n_processes=n_processes, **mulan_dict[dataset_name])
 
-exp()
+
+def exp_itl_bias():
+    h_start = np.genfromtxt('hs-LTL-trssubgdtsssubgd-.csv', delimiter=',')[-1]
+    mulan_dict[dataset_name]['n_tasks_test'] = mulan_dict[dataset_name]['n_val_tasks']
+    del mulan_dict[dataset_name]['n_val_tasks']
+    exp_itl_only(seed=2, exp_str=dataset_name, inner_solver_test_str=['noopt', 'ssubgd'],
+                 lambdas=np.logspace(-3, 3, num=5), h_start=h_start, n_train=100,
+                 verbose=5, n_processes=n_processes, **mulan_dict[dataset_name])
+
+exp_itl_bias()

@@ -13,7 +13,7 @@ from data import data_generator, data_load
 
 def exp_itl_only(exp_str='exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10),
         gamma = None, n_processes=30, w_bar = 4, y_snr = 100, task_std = 1, n_tasks = 100, n_train = 100, n_dims = 30,
-        n_tasks_test = 200, n_test = 100, val_perc = 0.0,
+        n_tasks_test = 200, n_test = 100, val_perc = 0.0, h_start = None,
         exp_dir = EXP_FOLDER,
         inner_solver_test_str = ('ssubgd', 'fista'), show_plot=False, verbose =0):
 
@@ -45,7 +45,10 @@ def exp_itl_only(exp_str='exp1', seed = 0, lambdas = np.logspace(-6, 3, num=10),
 
         # metaval for ITL
         results = Results(save_dir=exp_dir_path, do_plot=False, show_plot=show_plot, name='ITL-ts' + ts)
-        h = np.zeros(tasks_gen.n_dims)
+        if h_start is None:
+            h = np.zeros(tasks_gen.n_dims)
+        else:
+            h = np.copy(h_start)
         itl_res = val(h, val_metric, lambdas, gamma, inner_solver_test_class, loss_class,
                       data_valid, data_test, metric_dict, results, n_processes=n_processes, verbose=verbose)
 

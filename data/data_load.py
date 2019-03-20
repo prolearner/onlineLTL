@@ -349,7 +349,7 @@ def get_mulan_loader(data_name, **kwargs):
 def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=0.5,
           n_train_tasks=200, n_val_tasks=73, parent_path="data", balanced=True, add_bias=True,
           multi_transform='onevsmaxn_rand', normalization='meanstd', pca_comp=None, min_y_cardinality=0,
-          min_n_per_task=1, perc=1, data_analisys=True):
+          min_n_per_task=1, perc=1, data_analisys=False):
 
     desc = 'ts'+str(test_size)+'bal'+str(balanced)+'bias'+str(add_bias)+'mt'+multi_transform+'norm' \
             +normalization+'pca_c'+str(pca_comp)+'miny'+str(min_y_cardinality)+'mnpt'+str(min_n_per_task) \
@@ -439,7 +439,6 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
                     perm = np.random.permutation(pos_len)
                     Xi_pos = Xi_pos[perm][:n_ret]
                     yi_pos = yi_pos[perm][:n_ret]
-
 
             perm_idx = np.random.permutation(len(yi_neg) + len(yi_pos))
             Xi = np.concatenate((Xi_pos, Xi_neg), axis=0)[perm_idx]
