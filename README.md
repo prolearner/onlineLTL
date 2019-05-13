@@ -1,7 +1,14 @@
 # onlineLTL
 python implementation of online learning to learn non-smooth algorithms.
 
-## reproducting experiments from "Learning-to-Learn Stochastic Gradient Descent with Biased Regularization (https://arxiv.org/abs/1903.10399v1)"
+## Requirements
+
+This repository requires `python 3.x`, `numpy`, `pandas`, `scipy` and `sci-kit learn`.
+
+## Exps from "Learning-to-Learn Stochastic Gradient Descent with Biased Regularization"
+
+This repo contains the code for the experiments of the paper "Learning-to-Learn Stochastic Gradient Descent with Biased Regularization" 
+(https://arxiv.org/abs/1903.10399v1)
 
 For the synthetic experiments run `exp_synthetic.py` while for the computer survey experiments run `exp_lenk.py`.
 
