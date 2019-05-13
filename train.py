@@ -8,7 +8,6 @@ from utils import save_nparray, make_exp_dir, print_metric_mean_and_std, save_ex
 
 EXP_FOLDER = 'exps'
 
-
 class Results:
     @staticmethod
     def get_from_results(results):
