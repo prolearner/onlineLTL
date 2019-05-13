@@ -143,6 +143,7 @@ class ISTA(InnerSolver):
 
 
 class FISTA(ISTA):
+    """ ERM in the paper (look at Appendix J)"""
     name = 'fista'
 
     def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, **kwargs):
@@ -184,6 +185,7 @@ class FISTA(ISTA):
 
 
 class InnerSSubGD(InnerSolver):
+    """SGD (The proposed method) in the paper"""
     name = 'ssubgd'
 
     def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=None, **kwargs):
