@@ -67,6 +67,7 @@ class InnerSolver:
         self.conj_f = other.conj_f
         self.prox_f = other.prox_f
 
+
 class NoOpt(InnerSolver):
     name = 'noopt'
     def __call__(self, X_n, y_n, h=None, verbose=0, n_iter=InnerSolver.default_n_iter, **kwargs):
@@ -82,6 +83,7 @@ class NoOpt(InnerSolver):
             print('--- no inner training')
 
         return self.u
+
 
 class ISTA(InnerSolver):
     name = 'ista'

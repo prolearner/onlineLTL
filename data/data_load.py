@@ -557,4 +557,5 @@ def mulan(data_name, n_labels=374, features='nominal', test_set=True, test_size=
 
 if __name__ == '__main__':
     data_name = 'bibtex'
-    get_mulan_loader(data_name)(parent_path='')
+    computer_data_ge_reg()
+    #get_mulan_loader(data_name)(parent_path='')
