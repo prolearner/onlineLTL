@@ -89,7 +89,10 @@ def regression_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train=20,
         y_n = clean_y_n + eps_n
 
         X_train_all, X_test[i], Y_train_all, Y_test[i] = train_test_split(X_n, y_n, test_size=n_test)
-        X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
+        if val_perc > 0.:
+            X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
+        else:
+            X_train[i], X_val[i], Y_train[i], Y_val[i] = X_train_all, [], Y_train_all, []
 
         W_true[:, i] = w.ravel()
 
@@ -143,7 +146,11 @@ def classification_tasks_generator(n_tasks=120, val_perc=0.5, n_dims=30, n_train
             y_n = np.sign(clean_y_n)
 
         X_train_all, X_test[i], Y_train_all, Y_test[i] = train_test_split(X_n, y_n, test_size=n_test)
-        X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
+
+        if val_perc > 0.:
+            X_train[i], X_val[i], Y_train[i], Y_val[i] = train_test_split(X_train_all, Y_train_all, test_size=val_perc)
+        else:
+            X_train[i], X_val[i], Y_train[i], Y_val[i] = X_train_all, [], Y_train_all, []
 
         W_true[:, i] = w.ravel() * (1/thold)
 
