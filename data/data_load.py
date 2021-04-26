@@ -65,8 +65,11 @@ def computer_data_ge_reg(n_train_tasks=100, n_val_task=40, threshold=5):
 def computer_data_gen(n_train_tasks=100, n_val_task=40, threshold=5, cla=True, balanced=False):
 
     temp = sio.loadmat('lenk_data.mat')
-    train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (144 tasks of 20 elements)
-    test_data = temp['Testdata']  # 720x15 last feature is y (score from 0 to 10) (26 tasks of 20 elements)
+    
+    # train_data and test_data will contain the train and test elements of the tasks respectively.
+    train_data = temp['Traindata']  # 2880x15  last feature is output (score from 0 to 10) (180 tasks (people) of 16 elements (computers))
+    test_data = temp['Testdata']  # 720x15 last feature is y (score from 0 to 10) (180 tasks (people) of 4 elements (computers))
+    
 
     Y = train_data[:, 14]
     Y_test = test_data[:, 14]
